@@ -4,46 +4,269 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>漂流ボトル</title>
+
+  <!-- ほんの少しだけ綺麗な見た目。依存なし（CSSだけ） -->
+  <style>
+    :root{
+      --bg0: #f7fbff;
+      --bg1: #eef6ff;
+      --card: rgba(255,255,255,.75);
+      --border: rgba(15, 23, 42, .10);
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, .60);
+      --accent: #2563eb;
+      --accent2:#38bdf8;
+      --shadow: 0 18px 50px rgba(2, 6, 23, .10);
+      --radius: 18px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 10% 0%, rgba(56,189,248,.22), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(37,99,235,.18), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height: 100vh;
+      padding: 42px 18px;
+    }
+
+    .wrap{
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .logo{
+      width: 38px; height: 38px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      box-shadow: 0 10px 30px rgba(37,99,235,.25);
+      display:grid;
+      place-items:center;
+      color:white;
+      font-weight: 800;
+      letter-spacing: .02em;
+      user-select:none;
+    }
+    h1{
+      font-size: 22px;
+      margin:0;
+      letter-spacing:.02em;
+    }
+    .sub{
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 860px){
+      .grid{
+        grid-template-columns: 1.1fr .9fr;
+      }
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 18px;
+    }
+
+    .card h2{
+      margin:0 0 12px 0;
+      font-size: 16px;
+      letter-spacing:.01em;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input, textarea{
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size: 14px;
+      background: rgba(255,255,255,.85);
+      outline: none;
+    }
+    textarea{ resize: vertical; min-height: 130px; }
+
+    input:focus, textarea:focus{
+      border-color: rgba(37,99,235,.45);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    .btn{
+      border: 1px solid rgba(37,99,235,.25);
+      background: linear-gradient(135deg, rgba(56,189,248,.95), rgba(37,99,235,.95));
+      color: white;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: transform .05s ease, filter .15s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:hover{ filter: brightness(1.03); }
+
+    .btn-ghost{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.6);
+      color: var(--text);
+    }
+
+    .hint{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .bottle{
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px dashed rgba(15, 23, 42, .20);
+      background: rgba(255,255,255,.60);
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bottle::before{
+      content:"";
+      position:absolute;
+      inset:-40px -40px auto auto;
+      width:160px; height:160px;
+      background: radial-gradient(circle at 30% 30%, rgba(56,189,248,.35), transparent 55%);
+      transform: rotate(12deg);
+    }
+    .bottle pre{
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      position: relative;
+    }
+
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.65);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer{
+      margin-top: 16px;
+      color: rgba(15,23,42,.45);
+      font-size: 12px;
+      text-align:center;
+    }
+  </style>
 </head>
-<body style="font-family: system-ui; max-width: 720px; margin: 40px auto; line-height: 1.6;">
-  <h1>🌊 漂流ボトル</h1>
 
-  <section style="padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 16px;">
-    <h2>はじめての人</h2>
-    <form action="/anon" method="post">
-      <label>ニックネーム</label><br/>
-      <input name="nickname" maxlength="32" style="width: 100%; padding: 8px; margin: 6px 0 10px;" />
-      <button type="submit" style="padding: 10px 14px;">海に入る</button>
-    </form>
-    <p style="color:#666;">※登録なし。Cookieに匿名IDを保存して、毎日1通だけ届く。</p>
-  </section>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">🌊</div>
+      <div>
+        <h1>漂流ボトル</h1>
+        <p class="sub">フォローも、いいねも、宛先もない。毎日ひとつだけ届く瓶の手紙。</p>
+      </div>
+    </div>
 
-  <section style="padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 16px;">
-    <h2>今日のボトル</h2>
-    <button onclick="loadToday()" style="padding: 10px 14px;">受け取る</button>
-    <pre id="today" style="white-space: pre-wrap; background:#fafafa; padding: 12px; border-radius: 10px; margin-top: 10px;"></pre>
-  </section>
+    <div class="grid">
+      <!-- Left -->
+      <div class="card">
+        <h2>今日のボトル</h2>
+        <div class="row">
+          <button class="btn" onclick="loadToday()">受け取る</button>
+          <span class="pill">📦 1日1通 / Cookieで匿名ID</span>
+        </div>
+        <div class="bottle">
+          <pre id="today">まだ受け取っていない。</pre>
+        </div>
+        <div class="hint">
+          ※「受け取る」は今日の1回だけ。いま届いたものは、今日はずっと同じ。
+        </div>
+      </div>
 
-  <section style="padding: 12px; border: 1px solid #ddd; border-radius: 12px;">
-    <h2>ボトルを流す</h2>
-    <form action="/bottles" method="post">
-      <textarea name="content" maxlength="2000" rows="6" style="width: 100%; padding: 10px;"></textarea><br/>
-      <button type="submit" style="padding: 10px 14px; margin-top: 8px;">流す</button>
-    </form>
-  </section>
+      <!-- Right -->
+      <div>
+        <div class="card" style="margin-bottom:14px;">
+          <h2>はじめての人</h2>
+          <form action="/anon" method="post">
+            <label>ニックネーム</label>
+            <input name="nickname" maxlength="32" placeholder="せのあ" />
+            <div class="row" style="margin-top:12px;">
+              <button class="btn btn-ghost" type="submit">海に入る</button>
+              <span class="hint" style="margin:0;">登録なし。ブラウザに匿名IDを保存します。</span>
+            </div>
+          </form>
+        </div>
 
-<script>
-async function loadToday() {
-  const el = document.getElementById("today");
-  el.textContent = "……漂流中";
-  const res = await fetch("/today");
-  const data = await res.json();
-  if (data.bottle && data.bottle.content) {
-    el.textContent = data.bottle.content + "\n\n( bottle_id: " + data.bottle.id + " )";
-  } else {
-    el.textContent = data.message || "今日はまだ届かない。";
-  }
-}
-</script>
+        <div class="card">
+          <h2>ボトルを流す</h2>
+          <form action="/bottles" method="post">
+            <label>ことば</label>
+            <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
+            <div class="row" style="margin-top:12px;">
+              <button class="btn" type="submit">流す</button>
+              <span class="hint" style="margin:0;">※1日3本まで（MVP）</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Drift Bottle / MVP</div>
+  </div>
+
+  <script>
+    async function loadToday() {
+      const el = document.getElementById("today");
+      el.textContent = "……漂流中";
+      const res = await fetch("/today");
+      const data = await res.json();
+
+      if (data.bottle && data.bottle.content) {
+        el.textContent = data.bottle.content + "\n\n" + "( bottle_id: " + data.bottle.id + " )";
+      } else {
+        el.textContent = data.message || "今日はまだ届かない。";
+      }
+    }
+  </script>
 </body>
 </html>

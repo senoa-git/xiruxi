@@ -15,5 +15,11 @@ def on_startup():
 app.include_router(router)
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def index(request: Request, error: str | None = None):
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "error": error,
+        },
+    )

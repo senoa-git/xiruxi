@@ -26,9 +26,16 @@ def today_jst() -> date:
 def create_anon(response: Response, nickname: str = Form(...)):
     nickname = nickname.strip()
     if not nickname:
-        raise HTTPException(status_code=400, detail="nickname is required")
+        raise HTTPException(
+            url="/?error=nickname_required",
+            status_code=HTTP_303_SEE_OTHER,
+        )
+    
     if len(nickname) > 32:
-        raise HTTPException(status_code=400, detail="nickname too long")
+        raise HTTPException(
+            url="/?error=nickname_too_long",
+            status_code=HTTP_303_SEE_OTHER,
+        )
 
     anon_id = str(uuid.uuid4())
 

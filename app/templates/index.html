@@ -227,9 +227,36 @@
       <div>
         <div class="card" style="margin-bottom:14px;">
           <h2>はじめての人</h2>
+          
+          {% if error == "nickname_required" %}
+            <div style="
+              background: rgba(239,68,68,.08);
+              border: 1px solid rgba(239,68,68,.35);
+              color: #b91c1c;
+              padding: 10px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              margin-bottom: 12px;
+            ">
+              ニックネームを入力してください。
+            </div>
+          {% elif error == "nickname_too_long" %}
+            <div style="
+              background: rgba(239,68,68,.08);
+              border: 1px solid rgba(239,68,68,.35);
+              color: #b91c1c;
+              padding: 10px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              margin-bottom: 12px;
+            ">
+              ニックネームは32文字以内にしてください。
+            </div>
+          {% endif %}
+
           <form action="/anon" method="post">
             <label>ニックネーム</label>
-            <input name="nickname" maxlength="32" placeholder="せのあ" />
+            <input name="nickname" maxlength="32" placeholder="せのあ" required />
             <div class="row" style="margin-top:12px;">
               <button class="btn btn-ghost" type="submit">海に入る</button>
               <span class="hint" style="margin:0;">登録なし。ブラウザに匿名IDを保存します。</span>

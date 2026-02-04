@@ -8,6 +8,9 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Request, Response, HTTPException, Form
 from sqlmodel import select, func
 
+from fastapi.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+
 from .database import get_session
 from .models import User, Bottle, Delivery
 
@@ -35,6 +38,7 @@ def create_anon(response: Response, nickname: str = Form(...)):
         session.commit()
 
     # Cookie保存（ログイン概念なしの“実質ログイン”）
+    response = RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
     response.set_cookie(
         key="anon_id",
         value=anon_id,
@@ -42,7 +46,7 @@ def create_anon(response: Response, nickname: str = Form(...)):
         samesite="lax",
         max_age=60 * 60 * 24 * 365,  # 1年
     )
-    return {"ok": True, "anon_id": anon_id}
+    return response
 
 
 def require_anon_id(request: Request) -> str:
@@ -144,7 +148,7 @@ def post_bottle(request: Request, content: str = Form(...)):
         session.commit()
         session.refresh(bottle)
 
-    return {"ok": True, "bottle_id": bottle.id}
+    return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
 
 @router.post("/report")

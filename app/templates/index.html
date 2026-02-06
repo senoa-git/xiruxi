@@ -380,7 +380,7 @@
       const ctx = canvas.getContext("2d", { alpha: false });
 
       // -------- tuning knobs --------
-      const PIXEL = 2;
+      const PIXEL = 2;     // ドット粗さ
       const PLAYBACK = 0.7;
       const SAT = 1;
       const CON = 1;
@@ -390,22 +390,65 @@
       const offCtx = off.getContext("2d", { alpha: false });
 
       function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
 
-        off.width = Math.max(1, Math.floor(window.innerWidth / PIXEL));
-        off.height = Math.max(1, Math.floor(window.innerHeight / PIXEL));
+        // 見た目サイズ
+        const cssW = window.innerWidth;
+        const cssH = window.innerHeight;
+
+        // キャンバスの実ピクセル（dpr込み）
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+
+        // CSSでの表示サイズを明示（ズレ防止）
+        canvas.style.width = cssW + "px";
+        canvas.style.height = cssH + "px";
+
+        // ctx座標系をCSSピクセルに戻す
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // ピクセル化用のオフスクリーン（CSSピクセル基準でOK）
+        off.width = Math.max(1, Math.floor(cssW / PIXEL));
+        off.height = Math.max(1, Math.floor(cssH / PIXEL));
 
         offCtx.imageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
       }
 
       function draw() {
-        if (video.readyState >= 2) {
-          offCtx.drawImage(video, 0, 0, off.width, off.height);
+        if (video.readyState >= 2 && video.videoWidth && video.videoHeight) {
+          const vw = video.videoWidth;
+          const vh = video.videoHeight;
 
+          const targetW = off.width;
+          const targetH = off.height;
+
+          const videoAspect = vw / vh;
+          const targetAspect = targetW / targetH;
+
+          let sx = 0, sy = 0, sw = vw, sh = vh;
+
+          // cover：比率維持で「画面を埋める」
+          if (videoAspect > targetAspect) {
+            // 横長 → 左右を切る
+            sh = vh;
+            sw = Math.round(vh * targetAspect);
+            sx = Math.round((vw - sw) / 2);
+            sy = 0;
+          } else {
+            // 縦長 → 上下を切る
+            sw = vw;
+            sh = Math.round(vw / targetAspect);
+            sx = 0;
+            sy = Math.round((vh - sh) / 2);
+          }
+
+          // ① 縮小してドット化
+          offCtx.drawImage(video, sx, sy, sw, sh, 0, 0, targetW, targetH);
+
+          // ② 拡大して背景へ（CSSピクセルに描く）
           ctx.filter = `saturate(${SAT}) contrast(${CON})`;
-          ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(off, 0, 0, targetW, targetH, 0, 0, window.innerWidth, window.innerHeight);
           ctx.filter = "none";
         }
         requestAnimationFrame(draw);
@@ -417,11 +460,11 @@
       video.playbackRate = PLAYBACK;
       video.addEventListener("canplay", () => {
         video.playbackRate = PLAYBACK;
-        video.play().catch(()=>{});
+        video.play().catch(() => {});
       });
 
       const p = video.play();
-      if (p && typeof p.catch === "function") p.catch(()=>{});
+      if (p && typeof p.catch === "function") p.catch(() => {});
 
       requestAnimationFrame(draw);
     })();

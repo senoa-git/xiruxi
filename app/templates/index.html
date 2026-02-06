@@ -194,10 +194,24 @@
       font-size: 12px;
       text-align:center;
     }
+
+    /* Pixel ocean background */
+    #ocean{
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;          /* 背景に回す */
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      opacity: .6;          /* 好みで */
+    }
+
   </style>
 </head>
 
 <body>
+  <canvas id="ocean"></canvas>
   <div class="wrap">
     <div class="header">
       <div class="logo">🌊</div>
@@ -294,6 +308,91 @@
         el.textContent = data.message || "今日はまだ届かない。";
       }
     }
+
+    // Pixel ocean background
+    (() => {
+      const canvas = document.getElementById("ocean");
+      const ctx = canvas.getContext("2d", { alpha: true });
+
+      const SCALE = 6;        // 大きいほどドットがデカい
+      const HORIZON = 0.43;   // 海と空の境界
+      let t = 0;
+
+      function resize() {
+        const w = Math.ceil(window.innerWidth / SCALE);
+        const h = Math.ceil(window.innerHeight / SCALE);
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = (w * SCALE) + "px";
+        canvas.style.height = (h * SCALE) + "px";
+      }
+
+      function lerp(a, b, k){ return a + (b - a) * k; }
+      function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+
+      const skyTop = [140, 205, 255];
+      const skyBot = [220, 245, 255];
+      const seaTop = [ 30, 180, 210];
+      const seaMid = [ 20, 140, 200];
+      const seaBot = [ 10,  90, 170];
+
+      function draw() {
+        const w = canvas.width, h = canvas.height;
+        const horizonY = Math.floor(h * HORIZON);
+
+        for (let y = 0; y < h; y++) {
+          const isSky = y < horizonY;
+          const k = isSky ? (y / Math.max(1, horizonY)) : ((y - horizonY) / Math.max(1, (h - horizonY)));
+
+          for (let x = 0; x < w; x++) {
+            let r,g,b;
+
+            if (isSky) {
+              r = Math.floor(lerp(skyTop[0], skyBot[0], k));
+              g = Math.floor(lerp(skyTop[1], skyBot[1], k));
+              b = Math.floor(lerp(skyTop[2], skyBot[2], k));
+            } else {
+              const depth = k;
+              const wave1 = Math.sin((x * 0.18) + t * 1.2 + depth * 6.0);
+              const wave2 = Math.sin((x * 0.06) - t * 0.7 + depth * 2.0);
+              const wave = (wave1 * 0.6 + wave2 * 0.4);
+
+              const foam = clamp((wave - 0.35) * (0.25 + depth * 0.9), 0, 1);
+
+              const baseA = [
+                Math.floor(lerp(seaTop[0], seaMid[0], clamp(depth * 0.7, 0, 1))),
+                Math.floor(lerp(seaTop[1], seaMid[1], clamp(depth * 0.7, 0, 1))),
+                Math.floor(lerp(seaTop[2], seaMid[2], clamp(depth * 0.7, 0, 1))),
+              ];
+              const baseB = [
+                Math.floor(lerp(seaMid[0], seaBot[0], clamp((depth - 0.2) * 1.2, 0, 1))),
+                Math.floor(lerp(seaMid[1], seaBot[1], clamp((depth - 0.2) * 1.2, 0, 1))),
+                Math.floor(lerp(seaMid[2], seaBot[2], clamp((depth - 0.2) * 1.2, 0, 1))),
+              ];
+
+              const shade = (wave + 1) * 0.5;
+              r = Math.floor(lerp(baseA[0], baseB[0], depth) + shade * 8);
+              g = Math.floor(lerp(baseA[1], baseB[1], depth) + shade * 10);
+              b = Math.floor(lerp(baseA[2], baseB[2], depth) + shade * 14);
+
+              r = Math.floor(lerp(r, 245, foam));
+              g = Math.floor(lerp(g, 250, foam));
+              b = Math.floor(lerp(b, 255, foam));
+            }
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x, y, 1, 1);
+          }
+        }
+
+        t += 0.03;
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      window.addEventListener("resize", resize, { passive: true });
+      requestAnimationFrame(draw);
+    })();
   </script>
 </body>
 </html>

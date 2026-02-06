@@ -23,16 +23,23 @@ def today_jst() -> date:
 
 
 @router.post("/anon")
-def create_anon(response: Response, nickname: str = Form(...)):
+def create_anon(request: Request, nickname: str = Form(...)):
+    existing = request.cookies.get("anon_id")
+    if existing:
+        with get_session() as session:
+            user = session.get(User, existing)
+            if user:
+                return RedirectResponse(url="/?info=already_in_sea", status_code=HTTP_303_SEE_OTHER)
+
     nickname = nickname.strip()
     if not nickname:
-        raise HTTPException(
+        return RedirectResponse(
             url="/?error=nickname_required",
             status_code=HTTP_303_SEE_OTHER,
         )
     
     if len(nickname) > 32:
-        raise HTTPException(
+        return RedirectResponse(
             url="/?error=nickname_too_long",
             status_code=HTTP_303_SEE_OTHER,
         )

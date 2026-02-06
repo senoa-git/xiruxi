@@ -79,7 +79,9 @@ def get_today_bottle(request: Request):
         # user更新（存在確認も兼ねる）
         user = session.get(User, anon_id)
         if not user:
-            raise HTTPException(status_code=401, detail="unknown anon_id")
+            resp = RedirectResponse(url="/?info=need_nick", status_code=HTTP_303_SEE_OTHER)
+            resp.delete_cookie(key="anon_id")
+            return resp
         user.last_seen_at = datetime.utcnow()
         session.add(user)
         session.commit()

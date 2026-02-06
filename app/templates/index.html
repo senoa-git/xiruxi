@@ -43,12 +43,10 @@
       z-index: -3;
       pointer-events: none;
 
-      /* 拡大時の補間を切る（ドット感） */
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
 
-    /* 読みやすさ用の薄い膜 */
     body::after{
       content:"";
       position: fixed;
@@ -61,46 +59,6 @@
     .wrap{
       max-width: 900px;
       margin: 0 auto;
-    }
-
-    .header{
-      display:flex;
-      align-items:center;
-      gap: 12px;
-      margin-bottom: 22px;
-    }
-    .logo{
-      width: 38px; height: 38px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      box-shadow: 0 10px 30px rgba(37,99,235,.25);
-      display:grid;
-      place-items:center;
-      color:white;
-      font-weight: 800;
-      letter-spacing: .02em;
-      user-select:none;
-    }
-    h1{
-      font-size: 22px;
-      margin:0;
-      letter-spacing:.02em;
-    }
-    .sub{
-      margin: 4px 0 0 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
-    @media (min-width: 860px){
-      .grid{
-        grid-template-columns: 1.1fr .9fr;
-      }
     }
 
     .card{
@@ -201,126 +159,213 @@
       position: relative;
     }
 
-    .pill{
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.65);
-      color: var(--muted);
-      font-size: 12px;
+    /* ===== Splash / Boot animation ===== */
+    body.is-booting #app{
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
     }
 
-    .footer{
-      margin-top: 16px;
-      color: rgba(15,23,42,.45);
-      font-size: 12px;
-      text-align:center;
+    #splash{
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 3000ms ease;
     }
+
+    body.is-booting #splash{ opacity: 1; }
+    body.is-ready #splash{ opacity: 0; }
+
+    body.is-ready #app{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity 900ms ease, transform 900ms ease;
+    }
+
+    .pixel-title{
+      font-size: clamp(72px, 10vw, 140px);
+      letter-spacing: .12em;
+      color: rgba(255,255,255,.92);
+      text-shadow:
+        0 2px 0 rgba(0,0,0,.30),
+        0 16px 60px rgba(0,0,0,.35);
+      filter:
+        drop-shadow(6px 0 0 rgba(0,0,0,.22))
+        drop-shadow(-6px 0 0 rgba(0,0,0,.22))
+        drop-shadow(0 6px 0 rgba(0,0,0,.22))
+        drop-shadow(0 -6px 0 rgba(0,0,0,.22));
+    }
+
+    .scene{
+      display:none;
+      opacity:0;
+      transform: translateY(8px);
+      transition: opacity 500ms ease, transform 500ms ease;
+    }
+    .scene.is-active{
+      display:block;
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    .card.center{
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .card.center.ghost{
+      background: rgba(255,255,255,.12);
+    }
+
+    .grid.choice{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 860px){
+      .grid.choice{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .choice-btn{
+      text-align:left;
+      cursor:pointer;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .choice-btn:hover{ filter: brightness(1.03); }
+    .choice-btn:active{ transform: translateY(1px); }
+
+    .choice-icon{ font-size: 40px; margin-bottom: 10px; }
+
+    .walk-text{
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: .08em;
+      color: rgba(255,255,255,.92);
+      text-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .walk-sub{ margin-top: 10px; color: rgba(255,255,255,.75); }
   </style>
 </head>
 
-<body>
-  <!-- 背景：canvas（ドット化した動画を描く） -->
+{% set has_anon = request.cookies.get("anon_id") %}
+<body data-has-anon="{% if has_anon %}1{% else %}0{% endif %}">
+
   <canvas id="bgCanvas"></canvas>
 
-  <!-- 背景動画（DOM上は見えない。canvasに転写するためだけに使う） -->
   <video id="bgVideo" muted loop playsinline preload="auto" style="display:none">
     <source src="/static/ocean.mp4" type="video/mp4" />
   </video>
 
-  <div class="wrap">
-    <div class="header">
-      <div class="logo">・</div>
-      <div>
-        <h1>漂-しるし-</h1>
-        <p class="sub">フォローも、いいねも、宛先もない。毎日ひとつだけ届く瓶の手紙。</p>
-      </div>
-    </div>
+  <div id="splash" aria-hidden="true">
+    <div class="pixel-title">漂-しるし-</div>
+  </div>
 
-    <div class="grid">
-      <!-- Left -->
+  <div class="wrap" id="app">
+    <!-- Scene: nickname（anonが無い時だけ最初に出す） -->
+    <section id="scene-nick" class="scene {% if not has_anon %}is-active{% endif %}">
+      <div class="card center">
+        <h2>漂-しるし-</h2>
+        <p class="sub">まず、ニックネームを教えて。</p>
+
+        <form id="nickForm" action="/anon" method="post">
+          <input id="nickInput" name="nickname" maxlength="32" placeholder="せのあ" required />
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" type="submit">海に入る</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Scene: walking -->
+    <section id="scene-walk" class="scene">
+      <div class="card center ghost">
+        <div class="walk-text">砂浜を歩く……</div>
+        <div class="walk-sub">ざく、ざく、ざく。</div>
+      </div>
+    </section>
+
+    <!-- Scene: choice（anonがある時は最初ここから） -->
+    <section id="scene-choice" class="scene {% if has_anon %}is-active{% endif %}">
+      <div class="grid choice">
+        <button class="card choice-btn" id="chooseBottle" type="button">
+          <div class="choice-icon">🍾</div>
+          <h2>漂流ボトル</h2>
+          <p class="hint">今日届いた瓶の手紙をひとつ読む</p>
+        </button>
+
+        <button class="card choice-btn" id="choosePen" type="button">
+          <div class="choice-icon">📝</div>
+          <h2>紙とペン</h2>
+          <p class="hint">海に流す言葉を書く</p>
+        </button>
+      </div>
+    </section>
+
+    <!-- Scene: read bottle -->
+    <section id="scene-read" class="scene">
       <div class="card">
-        <h2>今日のボトル</h2>
-        <div class="row">
-          <button class="btn" onclick="loadToday()">受け取る</button>
-          <span class="pill">📦 1日1通 / Cookieで匿名ID</span>
+        <div class="row" style="justify-content:space-between; align-items:flex-end;">
+          <div>
+            <h2>今日のボトル</h2>
+            <div class="hint">※1日1通 / 今日の1回だけ</div>
+          </div>
+          <button class="btn btn-ghost" id="backFromRead" type="button">戻る</button>
         </div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="btnLoadToday" type="button">受け取る</button>
+        </div>
+
         <div class="bottle">
           <pre id="today">まだ受け取っていない。</pre>
         </div>
-        <div class="hint">
-          ※「受け取る」は今日の1回だけ。いま届いたものは、今日はずっと同じ。
-        </div>
       </div>
+    </section>
 
-      <!-- Right -->
-      <div>
-        <div class="card" style="margin-bottom:14px;">
-          <h2>はじめての人</h2>
-
-          {% if error == "nickname_required" %}
-            <div style="
-              background: rgba(239,68,68,.08);
-              border: 1px solid rgba(239,68,68,.35);
-              color: #b91c1c;
-              padding: 10px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              margin-bottom: 12px;
-            ">
-              ニックネームを入力してください。
-            </div>
-          {% elif error == "nickname_too_long" %}
-            <div style="
-              background: rgba(239,68,68,.08);
-              border: 1px solid rgba(239,68,68,.35);
-              color: #b91c1c;
-              padding: 10px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              margin-bottom: 12px;
-            ">
-              ニックネームは32文字以内にしてください。
-            </div>
-          {% endif %}
-
-          <form action="/anon" method="post">
-            <label>ニックネーム</label>
-            <input name="nickname" maxlength="32" placeholder="せのあ" required />
-            <div class="row" style="margin-top:12px;">
-              <button class="btn btn-ghost" type="submit">海に入る</button>
-              <span class="hint" style="margin:0;">登録なし。ブラウザに匿名IDを保存します。</span>
-            </div>
-          </form>
+    <!-- Scene: write bottle -->
+    <section id="scene-write" class="scene">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:flex-end;">
+          <div>
+            <h2>ボトルを流す</h2>
+            <div class="hint">※1日3本まで（MVP）</div>
+          </div>
+          <button class="btn btn-ghost" id="backFromWrite" type="button">戻る</button>
         </div>
 
-        <div class="card">
-          <h2>ボトルを流す</h2>
-          <form action="/bottles" method="post">
-            <label>ことば</label>
-            <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
-            <div class="row" style="margin-top:12px;">
-              <button class="btn" type="submit">流す</button>
-              <span class="hint" style="margin:0;">※1日3本まで（MVP）</span>
-            </div>
-          </form>
-        </div>
+        <form action="/bottles" method="post" style="margin-top:12px;">
+          <label>ことば</label>
+          <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" type="submit">流す</button>
+          </div>
+        </form>
       </div>
-    </div>
-
-    <div class="footer">漂-しるし- / MVP</div>
+    </section>
   </div>
 
   <script>
+    const HAS_ANON = document.body.dataset.hasAnon === "1";
+
     async function loadToday() {
       const el = document.getElementById("today");
       el.textContent = "……漂流中";
-      const res = await fetch("/today");
-      const data = await res.json();
+      const res = await fetch("/today", { credentials: "same-origin"});
 
+      if (res.status === 401) {
+        show("scene-nick");
+        return;
+      }
+
+      if (!res.ok) {
+        el.textContent = "うまく受け取れなかった。もう一度ためして。"
+        return;
+      }
+
+      const data = await res.json();
       if (data.bottle && data.bottle.content) {
         el.textContent = data.bottle.content + "\n\n" + "( bottle_id: " + data.bottle.id + " )";
       } else {
@@ -335,36 +380,30 @@
       const ctx = canvas.getContext("2d", { alpha: false });
 
       // -------- tuning knobs --------
-      const PIXEL = 7;           // ドットの大きさ（大きいほど粗い） 6〜12
-      const PLAYBACK = 0.7;     // 再生速度（小さいほどゆっくり） 0.25〜0.7
-      const SAT = 1.05;          // 彩度（好み）
-      const CON = 1.02;          // コントラスト（好み）
+      const PIXEL = 2;
+      const PLAYBACK = 0.7;
+      const SAT = 1;
+      const CON = 1;
       // -----------------------------
 
-      // オフスクリーン（低解像度で描く）
       const off = document.createElement("canvas");
       const offCtx = off.getContext("2d", { alpha: false });
 
       function resize() {
-        // 表示キャンバスはフルサイズ（CSSで100vw/100vh）
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // 低解像度キャンバス（ここがドット化の解像度）
         off.width = Math.max(1, Math.floor(window.innerWidth / PIXEL));
         off.height = Math.max(1, Math.floor(window.innerHeight / PIXEL));
 
-        // 補間OFF（ドット感）
         offCtx.imageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
       }
 
       function draw() {
         if (video.readyState >= 2) {
-          // 低解像度に描く（ドット化元）
           offCtx.drawImage(video, 0, 0, off.width, off.height);
 
-          // 画面に拡大して貼る（補間OFF）
           ctx.filter = `saturate(${SAT}) contrast(${CON})`;
           ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, canvas.width, canvas.height);
           ctx.filter = "none";
@@ -375,18 +414,74 @@
       resize();
       window.addEventListener("resize", resize, { passive: true });
 
-      // 再生速度を落とす & 自動再生保険
       video.playbackRate = PLAYBACK;
       video.addEventListener("canplay", () => {
         video.playbackRate = PLAYBACK;
         video.play().catch(()=>{});
       });
 
-      // iOS/Chrome対策：muted + play() 実行
       const p = video.play();
       if (p && typeof p.catch === "function") p.catch(()=>{});
 
       requestAnimationFrame(draw);
+    })();
+
+    // ===== Scene control =====
+    function show(id){
+      document.querySelectorAll(".scene")
+        .forEach(s => s.classList.remove("is-active"));
+      const el = document.getElementById(id);
+      if (el) el.classList.add("is-active");
+    }
+
+    // ===== Boot animation (title -> UI) =====
+    (() => {
+      document.body.classList.add("is-booting");
+
+      const SHOW_MS = 1200;
+      const FADE_MS = 900;
+
+      const start = () => {
+        setTimeout(() => {
+          document.body.classList.remove("is-booting");
+          document.body.classList.add("is-ready");
+
+          // ★Boot後に初期シーンを確定（ここがズレ防止）
+          show(HAS_ANON ? "scene-choice" : "scene-nick");
+        }, SHOW_MS);
+
+        setTimeout(() => {
+          const s = document.getElementById("splash");
+          if (s) s.remove();
+        }, SHOW_MS + FADE_MS + 150);
+      };
+
+      const v = document.getElementById("bgVideo");
+      if (v && v.readyState >= 2) {
+        start();
+      } else if (v) {
+        v.addEventListener("canplay", start, { once: true });
+        setTimeout(start, 1800);
+      } else {
+        setTimeout(start, 800);
+      }
+    })();
+
+    // ===== Buttons wiring =====
+    (() => {
+      const chooseBottle = document.getElementById("chooseBottle");
+      const choosePen = document.getElementById("choosePen");
+      const backFromRead = document.getElementById("backFromRead");
+      const backFromWrite = document.getElementById("backFromWrite");
+      const btnLoadToday = document.getElementById("btnLoadToday");
+
+      chooseBottle?.addEventListener("click", () => show("scene-read"));
+      choosePen?.addEventListener("click", () => show("scene-write"));
+
+      backFromRead?.addEventListener("click", () => show("scene-choice"));
+      backFromWrite?.addEventListener("click", () => show("scene-choice"));
+
+      btnLoadToday?.addEventListener("click", loadToday);
     })();
   </script>
 </body>

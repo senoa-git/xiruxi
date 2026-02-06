@@ -25,7 +25,7 @@
     <!-- Scene: nickname -->
     <section id="scene-nick" class="scene {% if not has_anon %}is-active{% endif %}">
       <div class="wrap">
-        <div class="nick-line">
+        <div class="nick-stack">
           <span class="nick-text">まず、ニックネームを教えて。</span>
 
           <form id="nickForm" class="nick-form" action="/anon" method="post">
@@ -34,12 +34,14 @@
               class="nick-input"
               name="nickname"
               maxlength="32"
-              placeholder="せのあ"
+              placeholder="なにか。"
               required
-              autocomplete="nickname"
             />
-            <button class="nick-enter" type="submit">海に入る。</button>
           </form>
+
+          <button class="nick-enter" type="submit" form="nickForm">
+            👉砂浜を歩いてみる。
+          </button>
         </div>
       </div>
     </section>

@@ -299,45 +299,61 @@ body.is-letter-open #scene-read .read-stack{
   }
 }
 
-/* nickname: 文章 + 下線入力 + 送信テキスト */
-.nick-line{
-  display:flex;
-  gap: 14px;
-  align-items: baseline;
+/* nickname: 3行（文章 / 下線入力 / 砂浜を歩いてみる。） */
+.nick-stack{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 22px;
   text-align: center;
 }
 
 .nick-text{
   color: rgba(255,255,255,.92);
-  font-weight: 750;
+  font-weight: 780;
   letter-spacing: .06em;
-  font-size: clamp(22px, 3.2vw, 40px);
+  font-size: clamp(22px, 3.4vw, 42px);
   text-shadow:
     0 2px 0 rgba(0,0,0,.22),
     0 18px 70px rgba(0,0,0,.38);
 }
 
 .nick-form{
-  display:flex;
-  gap: 14px;
-  align-items: baseline;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .nick-input{
-  width: clamp(160px, 28vw, 360px);
-  padding: 2px 2px 6px 2px;
-  border: 0;
-  border-bottom: 2px solid rgba(255,255,255,.65);
-  border-radius: 0;
-  background: transparent;
+  width: clamp(200px, 34vw, 420px);
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 2px solid rgba(255,255,255,.65) !important;
+  border-radius: 0 !important;
+  padding: 2px 2px 8px 2px !important;
+  box-shadow: none !important;
+
   color: rgba(255,255,255,.95);
   font-size: clamp(20px, 3vw, 36px);
   font-weight: 760;
   letter-spacing: .04em;
   outline: none;
-  box-shadow: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Chrome autofill が白い箱を作るのを潰す */
+.nick-input:-webkit-autofill,
+.nick-input:-webkit-autofill:hover,
+.nick-input:-webkit-autofill:focus{
+  -webkit-text-fill-color: rgba(255,255,255,.95) !important;
+
+  /* autofill の塗りを「透明」で上書き（これが本命） */
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+          box-shadow: 0 0 0px 1000px transparent inset !important;
+
+  /* 変な遷移で色が戻るのも防ぐ */
+  transition: background-color 9999s ease-out 0s;
 }
 
 .nick-input::placeholder{
@@ -345,25 +361,35 @@ body.is-letter-open #scene-read .read-stack{
 }
 
 .nick-input:focus{
-  border-bottom-color: rgba(255,255,255,.95);
+  border-bottom-color: rgba(255,255,255,.95) !important;
+  box-shadow: none !important;
 }
 
 .nick-enter{
-  appearance:none;
-  border:0;
+  appearance: none;
+  border: 0;
   background: transparent;
   padding: 0;
   cursor: pointer;
-  user-select:none;
+  user-select: none;
 
   color: rgba(255,255,255,.94);
   font-weight: 780;
   letter-spacing: .06em;
-  font-size: clamp(22px, 3.2vw, 40px);
+  font-size: clamp(20px, 3vw, 36px);
   text-shadow:
     0 2px 0 rgba(0,0,0,.22),
     0 18px 70px rgba(0,0,0,.38);
+
+  opacity: .85;
+  transform: translateY(0);
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 
-.nick-enter:hover{ transform: translateY(-1px); }
-.nick-enter:active{ transform: translateY(1px); }
+.nick-enter:hover{
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.nick-enter:active{
+  transform: translateY(1px);
+}

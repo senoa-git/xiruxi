@@ -120,6 +120,39 @@
       setTimeout(start, 800);
     }
   })();
+  
+  // ===== Nickname submit (no page reload) =====
+  (() => {
+    const form = document.getElementById("nickForm");
+    const input = document.getElementById("nickInput");
+    if (!form || !input) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fd = new FormData(form);
+      const nickname = (fd.get("nickname") || "").toString().trim();
+      if (!nickname) return;
+
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: fd,
+          credentials: "same-origin",
+          headers: { "Accept": "application/json" },
+        });
+
+        if (!res.ok) return;
+
+        // cookieはサーバで set-cookie される想定
+        document.body.dataset.hasAnon = "1";
+
+        // 演出：砂浜 → choice
+        show("scene-walk");
+        window.setTimeout(() => show("scene-choice"), 900);
+      } catch (_) {}
+    });
+  })();
 
   // ===== Choice animation control =====
   (() => {

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Response, HTTPException, Form
 from sqlmodel import select, func
 
 from fastapi.responses import RedirectResponse
-from starlette.status import HTTP_303_SEE_OTHER
+from starlette.status import HTTP_303_SEE_OTHER, HTTP_204_NO_CONTENT
 
 from .database import get_session
 from .models import User, Bottle, Delivery
@@ -29,20 +29,16 @@ def create_anon(request: Request, nickname: str = Form(...)):
         with get_session() as session:
             user = session.get(User, existing)
             if user:
+                # AJAXなら204、通常ならリダイレクト
+                if "application/json" in (request.headers.get("accept") or ""):
+                    return Response(status_code=HTTP_204_NO_CONTENT)
                 return RedirectResponse(url="/?info=already_in_sea", status_code=HTTP_303_SEE_OTHER)
 
     nickname = nickname.strip()
     if not nickname:
-        return RedirectResponse(
-            url="/?error=nickname_required",
-            status_code=HTTP_303_SEE_OTHER,
-        )
-    
+        return RedirectResponse(url="/?error=nickname_required", status_code=HTTP_303_SEE_OTHER)
     if len(nickname) > 32:
-        return RedirectResponse(
-            url="/?error=nickname_too_long",
-            status_code=HTTP_303_SEE_OTHER,
-        )
+        return RedirectResponse(url="/?error=nickname_too_long", status_code=HTTP_303_SEE_OTHER)
 
     anon_id = str(uuid.uuid4())
 
@@ -51,14 +47,17 @@ def create_anon(request: Request, nickname: str = Form(...)):
         session.add(user)
         session.commit()
 
-    # Cookie保存（ログイン概念なしの“実質ログイン”）
-    response = RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+    wants_ajax = "application/json" in (request.headers.get("accept") or "")
+
+    response = Response(status_code=HTTP_204_NO_CONTENT) if wants_ajax \
+        else RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+
     response.set_cookie(
         key="anon_id",
         value=anon_id,
         httponly=True,
         samesite="lax",
-        max_age=60 * 60 * 24 * 365,  # 1年
+        max_age=60 * 60 * 24 * 365,
     )
     return response
 

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from .database import init_db
+from .database import init_db, get_user_by_anon_id
 from .routes import router
 
 app = FastAPI(title="漂-しるし-")
@@ -18,10 +18,20 @@ app.include_router(router)
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, error: str | None = None):
-    return templates.TemplateResponse(
+    anon_id = request.cookies.get("anon_id")
+    user = get_user_by_anon_id(anon_id) if anon_id else None
+
+    resp = templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "error": error,
+            "has_anon": bool(user),
         },
     )
+
+    # ★cookieはあるけどDBにいない = stale cookie → 消す（おすすめ）
+    if anon_id and not user:
+        resp.delete_cookie("anon_id")
+
+    return resp

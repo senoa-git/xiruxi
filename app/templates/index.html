@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
 </head>
 
-{% set has_anon = request.cookies.get("anon_id") %}
 <body data-has-anon="{% if has_anon %}1{% else %}0{% endif %}">
 
   <canvas id="bgCanvas"></canvas>
@@ -26,15 +25,20 @@
     <!-- Scene: nickname -->
     <section id="scene-nick" class="scene {% if not has_anon %}is-active{% endif %}">
       <div class="wrap">
-        <div class="card center">
-          <h2>漂-しるし-</h2>
-          <p class="sub">まず、ニックネームを教えて。</p>
+        <div class="nick-line">
+          <span class="nick-text">まず、ニックネームを教えて。</span>
 
-          <form id="nickForm" action="/anon" method="post">
-            <input id="nickInput" name="nickname" maxlength="32" placeholder="せのあ" required />
-            <div class="row" style="margin-top:12px;">
-              <button class="btn" type="submit">海に入る</button>
-            </div>
+          <form id="nickForm" class="nick-form" action="/anon" method="post">
+            <input
+              id="nickInput"
+              class="nick-input"
+              name="nickname"
+              maxlength="32"
+              placeholder="せのあ"
+              required
+              autocomplete="nickname"
+            />
+            <button class="nick-enter" type="submit">海に入る。</button>
           </form>
         </div>
       </div>

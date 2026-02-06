@@ -7,33 +7,35 @@
 
   <style>
     :root{
-      --bg0: #f7fbff;
-      --bg1: #eef6ff;
       --card: rgba(255,255,255,.20);
       --border: rgba(15, 23, 42, .10);
       --text: #0f172a;
       --muted: rgba(15, 23, 42, .60);
-      --accent: #2563eb;
-      --accent2:#38bdf8;
       --shadow: 0 18px 50px rgba(2, 6, 23, .10);
       --radius: 18px;
 
-      /* ===== 背景調整つまみ ===== */
-      --veil: 0.18;   /* 読みやすさ膜（0.05〜0.30） */
+      /* 読みやすさ膜（0.05〜0.30） */
+      --veil: 0.18;
     }
 
     *{ box-sizing: border-box; }
 
+    html, body{
+      height: 100%;
+    }
     body{
-      margin:0;
+      margin: 0;
+      overflow: hidden; /* ページ全体はスクロールさせない */
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
       color: var(--text);
-      min-height: 100vh;
-      padding: 42px 18px;
       background: #eef6ff;
-      overflow-x: hidden;
     }
-
+    #app{
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      padding: 0; /* ここでは余白を持たない */
+    }
     /* ===== 背景（canvasでドット動画） ===== */
     #bgCanvas{
       position: fixed;
@@ -42,7 +44,6 @@
       height: 100vh;
       z-index: -3;
       pointer-events: none;
-
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
@@ -56,8 +57,69 @@
       pointer-events: none;
     }
 
+    /* ===== Splash / Boot animation ===== */
+    #splash{
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 3000ms ease;
+    }
+    body.is-booting #splash{ opacity: 1; }
+    body.is-ready  #splash{ opacity: 0; }
+
+    body.is-booting #app{ opacity:0; pointer-events:none; transform: translateY(10px); }
+    body.is-ready #app{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateY(0);
+      transition: opacity 900ms ease, transform 900ms ease;
+    }
+
+    .pixel-title{
+      font-size: clamp(72px, 10vw, 140px);
+      letter-spacing: .12em;
+      color: rgba(255,255,255,.92);
+      text-shadow:
+        0 2px 0 rgba(0,0,0,.30),
+        0 16px 60px rgba(0,0,0,.35);
+      filter:
+        drop-shadow(6px 0 0 rgba(0,0,0,.22))
+        drop-shadow(-6px 0 0 rgba(0,0,0,.22))
+        drop-shadow(0 6px 0 rgba(0,0,0,.22))
+        drop-shadow(0 -6px 0 rgba(0,0,0,.22));
+    }
+
+    /* =========================================================
+        scene を fixed 全画面にする（スクロール原因を根絶）
+    ========================================================= */
+    .scene{
+      position: absolute;
+      inset: 0;
+      display: none;
+
+      /* 余白はscene側に持たせる（ズレない） */
+      padding: 42px 18px;
+
+      /* 中身を常に“塊ごと”中央へ */
+      align-items: center;
+      justify-content: center;
+
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 500ms ease, transform 500ms ease;
+    }
+    .scene.is-active{
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* 画面中央の内容幅 */
     .wrap{
-      max-width: 900px;
+      width: min(900px, 92vw);
       margin: 0 auto;
     }
 
@@ -133,113 +195,16 @@
       line-height: 1.6;
     }
 
-    .bottle{
-      margin-top: 12px;
-      border-radius: 16px;
-      border: 1px dashed rgba(15, 23, 42, .20);
-      background: rgba(255,255,255,.60);
-      padding: 14px;
-      position: relative;
-      overflow: hidden;
-    }
-    .bottle::before{
-      content:"";
-      position:absolute;
-      inset:-40px -40px auto auto;
-      width:160px; height:160px;
-      background: radial-gradient(circle at 30% 30%, rgba(56,189,248,.35), transparent 55%);
-      transform: rotate(12deg);
-    }
-    .bottle pre{
-      margin: 0;
-      white-space: pre-wrap;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
-      font-size: 14px;
-      line-height: 1.7;
-      position: relative;
-    }
-
-    /* ===== Splash / Boot animation ===== */
-    body.is-booting #app{
-      opacity: 0;
-      transform: translateY(10px);
-      pointer-events: none;
-    }
-
-    #splash{
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 3000ms ease;
-    }
-
-    body.is-booting #splash{ opacity: 1; }
-    body.is-ready #splash{ opacity: 0; }
-
-    body.is-ready #app{
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-      transition: opacity 900ms ease, transform 900ms ease;
-    }
-
-    .pixel-title{
-      font-size: clamp(72px, 10vw, 140px);
-      letter-spacing: .12em;
-      color: rgba(255,255,255,.92);
-      text-shadow:
-        0 2px 0 rgba(0,0,0,.30),
-        0 16px 60px rgba(0,0,0,.35);
-      filter:
-        drop-shadow(6px 0 0 rgba(0,0,0,.22))
-        drop-shadow(-6px 0 0 rgba(0,0,0,.22))
-        drop-shadow(0 6px 0 rgba(0,0,0,.22))
-        drop-shadow(0 -6px 0 rgba(0,0,0,.22));
-    }
-
-    .scene{
-      display:none;
-      opacity:0;
-      transform: translateY(8px);
-      transition: opacity 500ms ease, transform 500ms ease;
-    }
-    .scene.is-active{
-      display:block;
-      opacity:1;
-      transform: translateY(0);
-    }
-
+    /* ===== Nick ===== */
     .card.center{
       max-width: 520px;
       margin: 0 auto;
     }
+
+    /* ===== Walking ===== */
     .card.center.ghost{
       background: rgba(255,255,255,.12);
     }
-
-    .grid.choice{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
-    @media (min-width: 860px){
-      .grid.choice{ grid-template-columns: 1fr 1fr; }
-    }
-
-    .choice-btn{
-      text-align:left;
-      cursor:pointer;
-      transition: transform .08s ease, filter .15s ease;
-    }
-    .choice-btn:hover{ filter: brightness(1.03); }
-    .choice-btn:active{ transform: translateY(1px); }
-
-    .choice-icon{ font-size: 40px; margin-bottom: 10px; }
-
     .walk-text{
       font-size: clamp(28px, 4vw, 44px);
       letter-spacing: .08em;
@@ -247,6 +212,138 @@
       text-shadow: 0 12px 40px rgba(0,0,0,.25);
     }
     .walk-sub{ margin-top: 10px; color: rgba(255,255,255,.75); }
+
+    /* ===== Choice / Read “体験” ===== */
+    .choice-stack, .read-stack{
+      width: min(900px, 92vw);
+      display: grid;
+      gap: 18px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .choice-line, .read-action{
+      appearance: none;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      user-select: none;
+
+      color: rgba(255,255,255,.94);
+      font-size: clamp(22px, 3.4vw, 42px);
+      font-weight: 780;
+      letter-spacing: .06em;
+      line-height: 1.25;
+
+      text-shadow:
+        0 2px 0 rgba(0,0,0,.22),
+        0 18px 70px rgba(0,0,0,.38);
+
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      filter: blur(0px);
+
+      transition: transform 520ms ease, opacity 520ms ease, filter 520ms ease;
+    }
+    .choice-line:hover, .read-action:hover{
+      transform: translateY(-2px) scale(1.01);
+    }
+
+    #scene-choice.is-selected .choice-line{ pointer-events:none; }
+    #scene-choice.is-selected .choice-line.is-picked{
+      transform: translateY(-6px) scale(1.035);
+    }
+    #scene-choice.is-selected .choice-line.is-faded{
+      opacity:0;
+      filter: blur(6px);
+      transform: translateY(8px) scale(.985);
+    }
+
+    .choice-back, .read-sub{
+      margin-top: 10px;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      letter-spacing: .06em;
+      text-shadow: 0 12px 40px rgba(0,0,0,.25);
+      cursor: pointer;
+      user-select:none;
+
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+      transition: opacity 420ms ease, transform 420ms ease;
+    }
+    #scene-choice.is-selected .choice-back{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .read-sub{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .read-title{
+      color: rgba(255,255,255,.92);
+      font-size: clamp(18px, 2.2vw, 22px);
+      letter-spacing: .10em;
+      text-shadow: 0 18px 70px rgba(0,0,0,.40);
+      margin-bottom: 8px;
+      opacity: .9;
+    }
+
+    /* ===== Write はスクロール可能にする（ここだけ例外） */
+    #scene-write.is-active{
+      display: block;        /* grid中央じゃなくて上から */
+      place-items: initial;
+      overflow: auto;        /* ✅ writeだけスクロールOK */
+      padding: 42px 18px;    /* ✅ 余白はここへ */
+    }
+    #scene-write .wrap{
+      width: min(900px, 92vw);
+      margin: 0 auto;
+    }
+
+    /* 手紙画像フェードイン */
+    .letter-overlay{
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 700ms ease;
+    }
+    .letter-overlay.is-show{
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .letter-img{
+      width: min(720px, 86vw);
+      max-height: 78vh;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 26px 80px rgba(0,0,0,.55));
+      transform: translateY(10px) scale(.985);
+      transition: transform 700ms ease;
+    }
+    .letter-overlay.is-show .letter-img{
+      transform: translateY(0) scale(1);
+    }
+    body.is-letter-open #scene-read .read-stack{
+      opacity: .25;
+      filter: blur(2px);
+      transition: opacity 500ms ease, filter 500ms ease;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .choice-line, .read-action, .choice-back, .read-sub{
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -263,115 +360,96 @@
     <div class="pixel-title">漂-しるし-</div>
   </div>
 
-  <div class="wrap" id="app">
-    <!-- Scene: nickname（anonが無い時だけ最初に出す） -->
+  <div id="app">
+    <!-- Scene: nickname -->
     <section id="scene-nick" class="scene {% if not has_anon %}is-active{% endif %}">
-      <div class="card center">
-        <h2>漂-しるし-</h2>
-        <p class="sub">まず、ニックネームを教えて。</p>
+      <div class="wrap">
+        <div class="card center">
+          <h2>漂-しるし-</h2>
+          <p class="sub">まず、ニックネームを教えて。</p>
 
-        <form id="nickForm" action="/anon" method="post">
-          <input id="nickInput" name="nickname" maxlength="32" placeholder="せのあ" required />
-          <div class="row" style="margin-top:12px;">
-            <button class="btn" type="submit">海に入る</button>
-          </div>
-        </form>
+          <form id="nickForm" action="/anon" method="post">
+            <input id="nickInput" name="nickname" maxlength="32" placeholder="せのあ" required />
+            <div class="row" style="margin-top:12px;">
+              <button class="btn" type="submit">海に入る</button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
 
     <!-- Scene: walking -->
     <section id="scene-walk" class="scene">
-      <div class="card center ghost">
-        <div class="walk-text">砂浜を歩く……</div>
-        <div class="walk-sub">ざく、ざく、ざく。</div>
+      <div class="wrap">
+        <div class="card center ghost">
+          <div class="walk-text">砂浜を歩く……</div>
+          <div class="walk-sub">ざく、ざく、ざく。</div>
+        </div>
       </div>
     </section>
 
-    <!-- Scene: choice（anonがある時は最初ここから） -->
+    <!-- Scene: choice -->
     <section id="scene-choice" class="scene {% if has_anon %}is-active{% endif %}">
-      <div class="grid choice">
-        <button class="card choice-btn" id="chooseBottle" type="button">
-          <div class="choice-icon">🍾</div>
-          <h2>漂流ボトル</h2>
-          <p class="hint">今日届いた瓶の手紙をひとつ読む</p>
+      <div class="choice-stack" aria-label="選択">
+        <button class="choice-line" id="chooseBottle" type="button">
+          今日届いた瓶の手紙をひとつ読む。
         </button>
 
-        <button class="card choice-btn" id="choosePen" type="button">
-          <div class="choice-icon">📝</div>
-          <h2>紙とペン</h2>
-          <p class="hint">海に流す言葉を書く</p>
+        <button class="choice-line" id="choosePen" type="button">
+          瓶の手紙を書く。
         </button>
+
+        <div class="choice-back" id="choiceBack" role="button" tabindex="0" aria-label="戻る">
+          やっぱり戻る。
+        </div>
       </div>
     </section>
 
-    <!-- Scene: read bottle -->
+    <!-- Scene: read -->
     <section id="scene-read" class="scene">
-      <div class="card">
-        <div class="row" style="justify-content:space-between; align-items:flex-end;">
-          <div>
-            <h2>今日のボトル</h2>
-            <div class="hint">※1日1通 / 今日の1回だけ</div>
-          </div>
-          <button class="btn btn-ghost" id="backFromRead" type="button">戻る</button>
-        </div>
+      <div class="read-stack">
+        <div class="read-title">今日のボトル</div>
 
-        <div class="row" style="margin-top:12px;">
-          <button class="btn" id="btnLoadToday" type="button">受け取る</button>
-        </div>
+        <button class="read-action" id="takeLetter" type="button">
+          手紙を手に取る
+        </button>
 
-        <div class="bottle">
-          <pre id="today">まだ受け取っていない。</pre>
+        <div class="read-sub" id="backFromRead" role="button" tabindex="0">
+          やっぱり戻る
         </div>
       </div>
     </section>
 
-    <!-- Scene: write bottle -->
+    <!-- Scene: write -->
     <section id="scene-write" class="scene">
-      <div class="card">
-        <div class="row" style="justify-content:space-between; align-items:flex-end;">
-          <div>
-            <h2>ボトルを流す</h2>
-            <div class="hint">※1日3本まで（MVP）</div>
+      <div class="wrap">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:flex-end;">
+            <div>
+              <h2>ボトルを流す</h2>
+              <div class="hint">※1日3本まで（MVP）</div>
+            </div>
+            <button class="btn btn-ghost" id="backFromWrite" type="button">戻る</button>
           </div>
-          <button class="btn btn-ghost" id="backFromWrite" type="button">戻る</button>
-        </div>
 
-        <form action="/bottles" method="post" style="margin-top:12px;">
-          <label>ことば</label>
-          <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
-          <div class="row" style="margin-top:12px;">
-            <button class="btn" type="submit">流す</button>
-          </div>
-        </form>
+          <form action="/bottles" method="post" style="margin-top:12px;">
+            <label>ことば</label>
+            <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
+            <div class="row" style="margin-top:12px;">
+              <button class="btn" type="submit">流す</button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
   </div>
 
+  <div class="letter-overlay" id="letterOverlay" aria-hidden="true">
+    <img class="letter-img" src="/static/letter.png" alt="手紙" />
+  </div>
+
   <script>
     const HAS_ANON = document.body.dataset.hasAnon === "1";
-
-    async function loadToday() {
-      const el = document.getElementById("today");
-      el.textContent = "……漂流中";
-      const res = await fetch("/today", { credentials: "same-origin"});
-
-      if (res.status === 401) {
-        show("scene-nick");
-        return;
-      }
-
-      if (!res.ok) {
-        el.textContent = "うまく受け取れなかった。もう一度ためして。"
-        return;
-      }
-
-      const data = await res.json();
-      if (data.bottle && data.bottle.content) {
-        el.textContent = data.bottle.content + "\n\n" + "( bottle_id: " + data.bottle.id + " )";
-      } else {
-        el.textContent = data.message || "今日はまだ届かない。";
-      }
-    }
 
     // ===== Pixelated video background (Canvas) =====
     (() => {
@@ -379,38 +457,27 @@
       const canvas = document.getElementById("bgCanvas");
       const ctx = canvas.getContext("2d", { alpha: false });
 
-      // -------- tuning knobs --------
-      const PIXEL = 2;     // ドット粗さ
+      const PIXEL = 2;
       const PLAYBACK = 0.7;
       const SAT = 1;
       const CON = 1;
-      // -----------------------------
 
       const off = document.createElement("canvas");
       const offCtx = off.getContext("2d", { alpha: false });
 
       function resize() {
         const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-        // 見た目サイズ
         const cssW = window.innerWidth;
         const cssH = window.innerHeight;
 
-        // キャンバスの実ピクセル（dpr込み）
         canvas.width = Math.floor(cssW * dpr);
         canvas.height = Math.floor(cssH * dpr);
-
-        // CSSでの表示サイズを明示（ズレ防止）
         canvas.style.width = cssW + "px";
         canvas.style.height = cssH + "px";
-
-        // ctx座標系をCSSピクセルに戻す
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // ピクセル化用のオフスクリーン（CSSピクセル基準でOK）
         off.width = Math.max(1, Math.floor(cssW / PIXEL));
         off.height = Math.max(1, Math.floor(cssH / PIXEL));
-
         offCtx.imageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
       }
@@ -428,25 +495,20 @@
 
           let sx = 0, sy = 0, sw = vw, sh = vh;
 
-          // cover：比率維持で「画面を埋める」
           if (videoAspect > targetAspect) {
-            // 横長 → 左右を切る
             sh = vh;
             sw = Math.round(vh * targetAspect);
             sx = Math.round((vw - sw) / 2);
             sy = 0;
           } else {
-            // 縦長 → 上下を切る
             sw = vw;
             sh = Math.round(vw / targetAspect);
             sx = 0;
             sy = Math.round((vh - sh) / 2);
           }
 
-          // ① 縮小してドット化
           offCtx.drawImage(video, sx, sy, sw, sh, 0, 0, targetW, targetH);
 
-          // ② 拡大して背景へ（CSSピクセルに描く）
           ctx.filter = `saturate(${SAT}) contrast(${CON})`;
           ctx.drawImage(off, 0, 0, targetW, targetH, 0, 0, window.innerWidth, window.innerHeight);
           ctx.filter = "none";
@@ -465,19 +527,21 @@
 
       const p = video.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
-
       requestAnimationFrame(draw);
     })();
 
-    // ===== Scene control =====
     function show(id){
-      document.querySelectorAll(".scene")
-        .forEach(s => s.classList.remove("is-active"));
+      document.querySelectorAll(".scene").forEach(s => s.classList.remove("is-active"));
       const el = document.getElementById(id);
       if (el) el.classList.add("is-active");
+
+      // ✅ どのシーンに行ってもスクロール位置を戻す（保険）
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
 
-    // ===== Boot animation (title -> UI) =====
+    // ===== Boot animation =====
     (() => {
       document.body.classList.add("is-booting");
 
@@ -488,8 +552,6 @@
         setTimeout(() => {
           document.body.classList.remove("is-booting");
           document.body.classList.add("is-ready");
-
-          // ★Boot後に初期シーンを確定（ここがズレ防止）
           show(HAS_ANON ? "scene-choice" : "scene-nick");
         }, SHOW_MS);
 
@@ -500,31 +562,98 @@
       };
 
       const v = document.getElementById("bgVideo");
-      if (v && v.readyState >= 2) {
-        start();
-      } else if (v) {
+      if (v && v.readyState >= 2) start();
+      else if (v) {
         v.addEventListener("canplay", start, { once: true });
         setTimeout(start, 1800);
-      } else {
-        setTimeout(start, 800);
-      }
+      } else setTimeout(start, 800);
     })();
 
-    // ===== Buttons wiring =====
+    // ===== Choice animation control =====
     (() => {
+      const sceneChoice = document.getElementById("scene-choice");
       const chooseBottle = document.getElementById("chooseBottle");
       const choosePen = document.getElementById("choosePen");
-      const backFromRead = document.getElementById("backFromRead");
-      const backFromWrite = document.getElementById("backFromWrite");
-      const btnLoadToday = document.getElementById("btnLoadToday");
+      const choiceBack = document.getElementById("choiceBack");
 
-      chooseBottle?.addEventListener("click", () => show("scene-read"));
-      choosePen?.addEventListener("click", () => show("scene-write"));
+      const DURATION_MS = 520;
+      let locked = false;
 
-      backFromRead?.addEventListener("click", () => show("scene-choice"));
-      backFromWrite?.addEventListener("click", () => show("scene-choice"));
+      function resetChoice() {
+        if (!sceneChoice) return;
+        sceneChoice.classList.remove("is-selected");
+        chooseBottle?.classList.remove("is-picked","is-faded");
+        choosePen?.classList.remove("is-picked","is-faded");
+        locked = false;
+      }
 
-      btnLoadToday?.addEventListener("click", loadToday);
+      function pick(which) {
+        if (locked) return;
+        locked = true;
+
+        sceneChoice?.classList.add("is-selected");
+
+        if (which === "bottle") {
+          chooseBottle?.classList.add("is-picked");
+          choosePen?.classList.add("is-faded");
+        } else {
+          choosePen?.classList.add("is-picked");
+          chooseBottle?.classList.add("is-faded");
+        }
+
+        window.setTimeout(() => {
+          show(which === "bottle" ? "scene-read" : "scene-write");
+          locked = false;
+        }, DURATION_MS);
+      }
+
+      function backToChoice() {
+        document.body.classList.remove("is-letter-open");
+        document.getElementById("letterOverlay")?.classList.remove("is-show");
+        document.getElementById("letterOverlay")?.setAttribute("aria-hidden","true");
+
+        show("scene-choice");
+        requestAnimationFrame(() => resetChoice());
+      }
+
+      chooseBottle?.addEventListener("click", () => pick("bottle"));
+      choosePen?.addEventListener("click", () => pick("pen"));
+
+      choiceBack?.addEventListener("click", () => resetChoice());
+      choiceBack?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          resetChoice();
+        }
+      });
+
+      document.getElementById("backFromRead")?.addEventListener("click", backToChoice);
+      document.getElementById("backFromWrite")?.addEventListener("click", backToChoice);
+
+      if (HAS_ANON) resetChoice();
+    })();
+
+    // ===== Read scene wiring =====
+    (() => {
+      const takeLetter = document.getElementById("takeLetter");
+      const letterOverlay = document.getElementById("letterOverlay");
+
+      function openLetter(){
+        document.body.classList.add("is-letter-open");
+        letterOverlay?.classList.add("is-show");
+        letterOverlay?.setAttribute("aria-hidden", "false");
+      }
+      function closeLetter(){
+        document.body.classList.remove("is-letter-open");
+        letterOverlay?.classList.remove("is-show");
+        letterOverlay?.setAttribute("aria-hidden", "true");
+      }
+
+      takeLetter?.addEventListener("click", openLetter);
+      letterOverlay?.addEventListener("click", closeLetter);
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeLetter();
+      });
     })();
   </script>
 </body>

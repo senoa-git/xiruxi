@@ -6,7 +6,8 @@ dist/
 wheels/
 *.egg-info
 bottle.db
-static/
+app/static/letter.png
+app/static/ocean.mp4
 
 # Virtual environments
 .venv

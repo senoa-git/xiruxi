@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from .database import init_db
 from .routes import router
 
-app = FastAPI(title="Drift Bottle")
+app = FastAPI(title="漂-しるし-")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 

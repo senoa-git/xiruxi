@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>漂流ボトル</title>
+  <title>漂-しるし-</title>
 
-  <!-- ほんの少しだけ綺麗な見た目。依存なし（CSSだけ） -->
   <style>
     :root{
       --bg0: #f7fbff;
@@ -18,9 +17,13 @@
       --accent2:#38bdf8;
       --shadow: 0 18px 50px rgba(2, 6, 23, .10);
       --radius: 18px;
+
+      /* ===== 背景調整つまみ ===== */
+      --veil: 0.18;   /* 読みやすさ膜（0.05〜0.30） */
     }
 
     *{ box-sizing: border-box; }
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
@@ -28,37 +31,31 @@
       min-height: 100vh;
       padding: 42px 18px;
       background: #eef6ff;
+      overflow-x: hidden;
     }
-    /* 背景：実写をドット化して敷く */
-    body::before{
-      content:"";
+
+    /* ===== 背景（canvasでドット動画） ===== */
+    #bgCanvas{
       position: fixed;
       inset: 0;
-      z-index: -2;
+      width: 100vw;
+      height: 100vh;
+      z-index: -3;
+      pointer-events: none;
 
-      /* ★ ここが肝：低解像度にして引き伸ばす */
-      background-image: url("/static/ocean.png");
-      background-repeat: no-repeat;
-      background-size: calc(100vw / 10) calc(100vh / 10); /* ←ドットの大きさ */
-      background-position: center;
-
-      /* 拡大表示 */
-      transform: scale(10);
-      transform-origin: center;
-
-      /* 補間を切ってピクセル感を出す */
+      /* 拡大時の補間を切る（ドット感） */
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
 
-    /* 読みやすさ用の薄い白い膜（海を邪魔しない） */
+    /* 読みやすさ用の薄い膜 */
     body::after{
       content:"";
       position: fixed;
       inset: 0;
-      z-index: -1;
-      background: rgba(255,255,255,.45);  /* 好みで0.35〜0.65 */
-      backdrop-filter: blur(0px);
+      z-index: -2;
+      background: rgba(255,255,255,var(--veil));
+      pointer-events: none;
     }
 
     .wrap{
@@ -222,28 +219,23 @@
       font-size: 12px;
       text-align:center;
     }
-
-    /* Pixel ocean background */
-    #ocean{
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -2;          /* 背景に回す */
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-
   </style>
 </head>
 
 <body>
-  <canvas id="ocean"></canvas>
+  <!-- 背景：canvas（ドット化した動画を描く） -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- 背景動画（DOM上は見えない。canvasに転写するためだけに使う） -->
+  <video id="bgVideo" muted loop playsinline preload="auto" style="display:none">
+    <source src="/static/ocean.mp4" type="video/mp4" />
+  </video>
+
   <div class="wrap">
     <div class="header">
-      <div class="logo">🌊</div>
+      <div class="logo">・</div>
       <div>
-        <h1>漂流ボトル</h1>
+        <h1>漂-しるし-</h1>
         <p class="sub">フォローも、いいねも、宛先もない。毎日ひとつだけ届く瓶の手紙。</p>
       </div>
     </div>
@@ -268,7 +260,7 @@
       <div>
         <div class="card" style="margin-bottom:14px;">
           <h2>はじめての人</h2>
-          
+
           {% if error == "nickname_required" %}
             <div style="
               background: rgba(239,68,68,.08);
@@ -319,7 +311,7 @@
       </div>
     </div>
 
-    <div class="footer">Drift Bottle / MVP</div>
+    <div class="footer">漂-しるし- / MVP</div>
   </div>
 
   <script>
@@ -336,55 +328,65 @@
       }
     }
 
-    // Pixel background from real image (ocean.png)
+    // ===== Pixelated video background (Canvas) =====
     (() => {
-      const canvas = document.getElementById("ocean");
-      const ctx = canvas.getContext("2d", { alpha: true });
+      const video = document.getElementById("bgVideo");
+      const canvas = document.getElementById("bgCanvas");
+      const ctx = canvas.getContext("2d", { alpha: false });
 
-      // 数字↑で粗く（ドット大きい）/ 数字↓で細かく
-      const PIXEL = 6;
+      // -------- tuning knobs --------
+      const PIXEL = 7;           // ドットの大きさ（大きいほど粗い） 6〜12
+      const PLAYBACK = 0.7;     // 再生速度（小さいほどゆっくり） 0.25〜0.7
+      const SAT = 1.05;          // 彩度（好み）
+      const CON = 1.02;          // コントラスト（好み）
+      // -----------------------------
 
-      // 白い膜（読みやすさ） 0.0〜0.8
-      const VEIL_ALPHA = 0.18;
+      // オフスクリーン（低解像度で描く）
+      const off = document.createElement("canvas");
+      const offCtx = off.getContext("2d", { alpha: false });
 
-      const img = new Image();
-      img.src = "/static/ocean.png";
+      function resize() {
+        // 表示キャンバスはフルサイズ（CSSで100vw/100vh）
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-      function resizeAndDraw() {
-        // 低解像度で描くサイズ（=ドット化の元）
-        const w = Math.max(1, Math.ceil(window.innerWidth / PIXEL));
-        const h = Math.max(1, Math.ceil(window.innerHeight / PIXEL));
+        // 低解像度キャンバス（ここがドット化の解像度）
+        off.width = Math.max(1, Math.floor(window.innerWidth / PIXEL));
+        off.height = Math.max(1, Math.floor(window.innerHeight / PIXEL));
 
-        // キャンバスは低解像度
-        canvas.width = w;
-        canvas.height = h;
-
-        // 補間OFF（超重要）
+        // 補間OFF（ドット感）
+        offCtx.imageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
-
-        // 画像を“低解像度”で描く＝ピクセル化
-        ctx.clearRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // 読みやすさのための薄い白い膜（必要なら）
-        if (VEIL_ALPHA > 0) {
-          ctx.fillStyle = `rgba(255,255,255,${VEIL_ALPHA})`;
-          ctx.fillRect(0, 0, w, h);
-        }
-
-        // 表示はCSS側で拡大＆pixelatedにする
-        canvas.style.width = "100vw";
-        canvas.style.height = "100vh";
       }
 
-      img.onload = () => {
-        resizeAndDraw();
-      };
+      function draw() {
+        if (video.readyState >= 2) {
+          // 低解像度に描く（ドット化元）
+          offCtx.drawImage(video, 0, 0, off.width, off.height);
 
-      window.addEventListener("resize", () => {
-        // 画像ロード前に走ってもOK
-        if (img.complete) resizeAndDraw();
-      }, { passive: true });
+          // 画面に拡大して貼る（補間OFF）
+          ctx.filter = `saturate(${SAT}) contrast(${CON})`;
+          ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, canvas.width, canvas.height);
+          ctx.filter = "none";
+        }
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      window.addEventListener("resize", resize, { passive: true });
+
+      // 再生速度を落とす & 自動再生保険
+      video.playbackRate = PLAYBACK;
+      video.addEventListener("canplay", () => {
+        video.playbackRate = PLAYBACK;
+        video.play().catch(()=>{});
+      });
+
+      // iOS/Chrome対策：muted + play() 実行
+      const p = video.play();
+      if (p && typeof p.catch === "function") p.catch(()=>{});
+
+      requestAnimationFrame(draw);
     })();
   </script>
 </body>

@@ -10,7 +10,7 @@
     :root{
       --bg0: #f7fbff;
       --bg1: #eef6ff;
-      --card: rgba(255,255,255,.75);
+      --card: rgba(255,255,255,.20);
       --border: rgba(15, 23, 42, .10);
       --text: #0f172a;
       --muted: rgba(15, 23, 42, .60);
@@ -25,12 +25,40 @@
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(1200px 700px at 10% 0%, rgba(56,189,248,.22), transparent 60%),
-        radial-gradient(900px 600px at 90% 20%, rgba(37,99,235,.18), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
       min-height: 100vh;
       padding: 42px 18px;
+      background: #eef6ff;
+    }
+    /* 背景：実写をドット化して敷く */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+
+      /* ★ ここが肝：低解像度にして引き伸ばす */
+      background-image: url("/static/ocean.png");
+      background-repeat: no-repeat;
+      background-size: calc(100vw / 10) calc(100vh / 10); /* ←ドットの大きさ */
+      background-position: center;
+
+      /* 拡大表示 */
+      transform: scale(10);
+      transform-origin: center;
+
+      /* 補間を切ってピクセル感を出す */
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* 読みやすさ用の薄い白い膜（海を邪魔しない） */
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: rgba(255,255,255,.45);  /* 好みで0.35〜0.65 */
+      backdrop-filter: blur(0px);
     }
 
     .wrap{
@@ -201,10 +229,9 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      z-index: -1;          /* 背景に回す */
+      z-index: -2;          /* 背景に回す */
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      opacity: .6;          /* 好みで */
     }
 
   </style>
@@ -309,89 +336,55 @@
       }
     }
 
-    // Pixel ocean background
+    // Pixel background from real image (ocean.png)
     (() => {
       const canvas = document.getElementById("ocean");
       const ctx = canvas.getContext("2d", { alpha: true });
 
-      const SCALE = 6;        // 大きいほどドットがデカい
-      const HORIZON = 0.43;   // 海と空の境界
-      let t = 0;
+      // 数字↑で粗く（ドット大きい）/ 数字↓で細かく
+      const PIXEL = 6;
 
-      function resize() {
-        const w = Math.ceil(window.innerWidth / SCALE);
-        const h = Math.ceil(window.innerHeight / SCALE);
+      // 白い膜（読みやすさ） 0.0〜0.8
+      const VEIL_ALPHA = 0.18;
+
+      const img = new Image();
+      img.src = "/static/ocean.png";
+
+      function resizeAndDraw() {
+        // 低解像度で描くサイズ（=ドット化の元）
+        const w = Math.max(1, Math.ceil(window.innerWidth / PIXEL));
+        const h = Math.max(1, Math.ceil(window.innerHeight / PIXEL));
+
+        // キャンバスは低解像度
         canvas.width = w;
         canvas.height = h;
-        canvas.style.width = (w * SCALE) + "px";
-        canvas.style.height = (h * SCALE) + "px";
-      }
 
-      function lerp(a, b, k){ return a + (b - a) * k; }
-      function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+        // 補間OFF（超重要）
+        ctx.imageSmoothingEnabled = false;
 
-      const skyTop = [140, 205, 255];
-      const skyBot = [220, 245, 255];
-      const seaTop = [ 30, 180, 210];
-      const seaMid = [ 20, 140, 200];
-      const seaBot = [ 10,  90, 170];
+        // 画像を“低解像度”で描く＝ピクセル化
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
 
-      function draw() {
-        const w = canvas.width, h = canvas.height;
-        const horizonY = Math.floor(h * HORIZON);
-
-        for (let y = 0; y < h; y++) {
-          const isSky = y < horizonY;
-          const k = isSky ? (y / Math.max(1, horizonY)) : ((y - horizonY) / Math.max(1, (h - horizonY)));
-
-          for (let x = 0; x < w; x++) {
-            let r,g,b;
-
-            if (isSky) {
-              r = Math.floor(lerp(skyTop[0], skyBot[0], k));
-              g = Math.floor(lerp(skyTop[1], skyBot[1], k));
-              b = Math.floor(lerp(skyTop[2], skyBot[2], k));
-            } else {
-              const depth = k;
-              const wave1 = Math.sin((x * 0.18) + t * 1.2 + depth * 6.0);
-              const wave2 = Math.sin((x * 0.06) - t * 0.7 + depth * 2.0);
-              const wave = (wave1 * 0.6 + wave2 * 0.4);
-
-              const foam = clamp((wave - 0.35) * (0.25 + depth * 0.9), 0, 1);
-
-              const baseA = [
-                Math.floor(lerp(seaTop[0], seaMid[0], clamp(depth * 0.7, 0, 1))),
-                Math.floor(lerp(seaTop[1], seaMid[1], clamp(depth * 0.7, 0, 1))),
-                Math.floor(lerp(seaTop[2], seaMid[2], clamp(depth * 0.7, 0, 1))),
-              ];
-              const baseB = [
-                Math.floor(lerp(seaMid[0], seaBot[0], clamp((depth - 0.2) * 1.2, 0, 1))),
-                Math.floor(lerp(seaMid[1], seaBot[1], clamp((depth - 0.2) * 1.2, 0, 1))),
-                Math.floor(lerp(seaMid[2], seaBot[2], clamp((depth - 0.2) * 1.2, 0, 1))),
-              ];
-
-              const shade = (wave + 1) * 0.5;
-              r = Math.floor(lerp(baseA[0], baseB[0], depth) + shade * 8);
-              g = Math.floor(lerp(baseA[1], baseB[1], depth) + shade * 10);
-              b = Math.floor(lerp(baseA[2], baseB[2], depth) + shade * 14);
-
-              r = Math.floor(lerp(r, 245, foam));
-              g = Math.floor(lerp(g, 250, foam));
-              b = Math.floor(lerp(b, 255, foam));
-            }
-
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            ctx.fillRect(x, y, 1, 1);
-          }
+        // 読みやすさのための薄い白い膜（必要なら）
+        if (VEIL_ALPHA > 0) {
+          ctx.fillStyle = `rgba(255,255,255,${VEIL_ALPHA})`;
+          ctx.fillRect(0, 0, w, h);
         }
 
-        t += 0.03;
-        requestAnimationFrame(draw);
+        // 表示はCSS側で拡大＆pixelatedにする
+        canvas.style.width = "100vw";
+        canvas.style.height = "100vh";
       }
 
-      resize();
-      window.addEventListener("resize", resize, { passive: true });
-      requestAnimationFrame(draw);
+      img.onload = () => {
+        resizeAndDraw();
+      };
+
+      window.addEventListener("resize", () => {
+        // 画像ロード前に走ってもOK
+        if (img.complete) resizeAndDraw();
+      }, { passive: true });
     })();
   </script>
 </body>

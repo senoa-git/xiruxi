@@ -78,6 +78,11 @@ def get_today_bottle(request: Request):
         # user更新（存在確認も兼ねる）
         user = session.get(User, anon_id)
         if not user:
+            # AJAXならJSON、通常ならリダイレクト
+            if "application/json" in (request.headers.get("accept") or ""):
+                resp = Response(status_code=401)
+                resp.delete_cookie(key="anon_id")
+                return resp
             resp = RedirectResponse(url="/?info=need_nick", status_code=HTTP_303_SEE_OTHER)
             resp.delete_cookie(key="anon_id")
             return resp
@@ -113,19 +118,22 @@ def get_today_bottle(request: Request):
         received_ids_set = set(received_ids)
 
         q = select(Bottle.id).where(Bottle.is_hidden == False)
-        q = q.where((Bottle.author_anon_id.is_(None)) | (Bottle.author_anon_id != anon_id))
 
         # 既受信除外（件数増えると重いので、MVPではこれでOK）
         if received_ids_set:
             q = q.where(Bottle.id.not_in(received_ids_set))
 
         # ランダムに1本（SQLiteでも動くように random()）
-        q = q.order_by(func.random()).limit(1)
+        bottle_id = session.exec(
+            q.order_by(func.random()).limit(1)
+        ).first()
 
-        bottle_id = session.exec(q).first()
         if bottle_id is None:
-            # 海にボトルが無い（or 受け取り尽くした）
-            return {"date": str(today), "bottle": None, "message": "まだ海にボトルがない。君が最初の1本を流していい。"}
+            return {
+                "date": str(today),
+                "bottle": None,
+                "message": "まだ海にボトルがない。君が最初の1本を流していい。"
+            }
 
         delivery = Delivery(user_anon_id=anon_id, bottle_id=bottle_id, delivered_on=today)
         session.add(delivery)

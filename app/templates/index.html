@@ -120,7 +120,11 @@
   </div>
 
   <div class="letter-overlay" id="letterOverlay" aria-hidden="true">
-    <img class="letter-img" src="{{ url_for('static', path='letter.png') }}" alt="手紙" />
+    <div class="letter-wrap">
+      <img class="letter-img" src="{{ url_for('static', path='letter.png') }}" alt="手紙" />
+      <div class="letter-text" id="letterText" aria-label="手紙の本文"></div>
+      <div class="letter-meta" id="letterMeta"></div>
+    </div>
   </div>
 
   <!-- ✅ JS 外だし（defer推奨） -->

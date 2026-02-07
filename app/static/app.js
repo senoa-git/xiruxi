@@ -80,10 +80,26 @@
     requestAnimationFrame(draw);
   })();
 
+  const SCENE_FADE_MS = 1200;
+
   function show(id){
-    document.querySelectorAll(".scene").forEach(s => s.classList.remove("is-active"));
-    const el = document.getElementById(id);
-    if (el) el.classList.add("is-active");
+    const next = document.getElementById(id);
+    if (!next) return;
+
+    const current = document.querySelector(".scene.is-active");
+
+    // 先に次を出す（クロスフェード）
+    next.classList.add("is-active");
+
+    // 旧シーンは leaving にしてフェードアウト
+    if (current && current !== next) {
+      current.classList.add("is-leaving");
+      current.classList.remove("is-active");
+
+      window.setTimeout(() => {
+        current.classList.remove("is-leaving");
+      }, SCENE_FADE_MS);
+    }
 
     // 保険：どのシーンでもトップへ
     window.scrollTo(0, 0);
@@ -166,7 +182,7 @@
     const choosePen = document.getElementById("choosePen");
     const choiceBack = document.getElementById("choiceBack");
 
-    const DURATION_MS = 520;
+    const DURATION_MS = 1200;
     let locked = false;
 
     function resetChoice() {
@@ -228,10 +244,63 @@
     const takeLetter = document.getElementById("takeLetter");
     const letterOverlay = document.getElementById("letterOverlay");
 
-    function openLetter(){
+    async function openLetter(){
       document.body.classList.add("is-letter-open");
       letterOverlay?.classList.add("is-show");
       letterOverlay?.setAttribute("aria-hidden", "false");
+
+      const textEl = document.getElementById("letterText");
+      const metaEl = document.getElementById("letterMeta");
+      if (!textEl) return;
+
+      textEl.textContent = "……";
+      if (metaEl) metaEl.textContent = "";
+
+      try{
+        const res = await fetch("/today", {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin",
+        });
+        if (!res.ok) throw new Error("failed");
+        const data = await res.json();
+
+        const content = (data?.bottle?.content ?? data?.message ?? "").toString();
+
+        // 1文字ずつ span 化
+        textEl.innerHTML = "";
+        const inner = document.createElement("div");
+        inner.className = "inner";
+        textEl.appendChild(inner);
+
+        const chars = [...content];
+        const baseDelay = 1;   // 秒
+        const maxDelay  = 2.2;    // 秒
+
+        let k = 0; // ← 表示文字カウント（改行は増やさない）
+        chars.forEach((ch) => {
+          if (ch === "\n") {
+            inner.appendChild(document.createElement("br"));
+            return;
+          }
+
+          // スペースも「間」として出したいならカウント増やす
+          const span = document.createElement("span");
+          span.className = "ch";
+          span.textContent = ch;
+
+          const d = Math.min(k * baseDelay, maxDelay);
+          span.style.animationDelay = `${d}s`;
+          inner.appendChild(span);
+
+          // 空白もタイピング感として遅らせたいなら：if (ch === " ") k += 0.5; みたいにしても良い
+          k += 1;
+        });
+
+        if (metaEl) metaEl.textContent = data?.date ? `— ${data.date}` : "";
+      }catch(e){
+        textEl.textContent = "波の音に、ことばが消えた。";
+      }
     }
     function closeLetter(){
       document.body.classList.remove("is-letter-open");

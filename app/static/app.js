@@ -274,8 +274,8 @@
         textEl.appendChild(inner);
 
         const chars = [...content];
-        const baseDelay = 1;   // 秒
-        const maxDelay  = 2.2;    // 秒
+        const baseDelay = 0.25;   // 秒
+        const maxDelay  = 22.5;    // 秒
 
         let k = 0; // ← 表示文字カウント（改行は増やさない）
         chars.forEach((ch) => {
@@ -313,5 +313,20 @@
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeLetter();
     });
+  })();
+  (() => {
+    const input = document.querySelector(".write-input");
+    const count = document.getElementById("writeCount");
+    if (!input || !count) return;
+
+    const MAX = 90;
+
+    const update = () => {
+      const len = [...input.value].length; // 絵文字対応
+      count.textContent = MAX - len;
+    };
+
+    input.addEventListener("input", update);
+    update();
   })();
 })();

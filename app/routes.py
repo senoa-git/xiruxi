@@ -149,7 +149,7 @@ def post_bottle(request: Request, content: str = Form(...)):
     content = content.strip()
     if not content:
         raise HTTPException(status_code=400, detail="content is required")
-    if len(content) > 2000:
+    if len(content) > 90:
         raise HTTPException(status_code=400, detail="content too long")
 
     today = today_jst()

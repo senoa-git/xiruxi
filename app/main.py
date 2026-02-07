@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -6,9 +7,13 @@ from fastapi.staticfiles import StaticFiles
 from .database import init_db, get_user_by_anon_id
 from .routes import router
 
+BASE_DIR = Path(__file__).resolve().parent  # = .../app
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+
 app = FastAPI(title="漂-しるし-")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.on_event("startup")
 def on_startup():

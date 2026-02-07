@@ -57,7 +57,7 @@ body::after{
   place-items: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 3000ms ease;
+  transition: opacity 6000ms ease;
 }
 body.is-booting #splash{ opacity: 1; }
 body.is-ready  #splash{ opacity: 0; }
@@ -67,7 +67,7 @@ body.is-ready #app{
   opacity:1;
   pointer-events:auto;
   transform: translateY(0);
-  transition: opacity 900ms ease, transform 900ms ease;
+  transition: opacity 2400ms ease, transform 2400ms ease;
 }
 
 .pixel-title{

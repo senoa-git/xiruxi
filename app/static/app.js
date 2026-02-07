@@ -95,8 +95,8 @@
   (() => {
     document.body.classList.add("is-booting");
 
-    const SHOW_MS = 1200;
-    const FADE_MS = 900;
+    const SHOW_MS = 1800;
+    const FADE_MS = 6000;
 
     const start = () => {
       setTimeout(() => {
@@ -120,7 +120,7 @@
       setTimeout(start, 800);
     }
   })();
-  
+
   // ===== Nickname submit (no page reload) =====
   (() => {
     const form = document.getElementById("nickForm");

@@ -4,8 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>漂-しるし-</title>
-
-  <!-- ✅ CSS 外だし -->
   <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
 </head>
 
@@ -40,7 +38,7 @@
           </form>
 
           <button class="nick-enter" type="submit" form="nickForm">
-            👉砂浜を歩いてみる。
+            👣砂浜を歩いてみる。
           </button>
         </div>
       </div>
@@ -90,24 +88,26 @@
 
     <!-- Scene: write -->
     <section id="scene-write" class="scene">
-      <div class="wrap">
-        <div class="card">
-          <div class="row" style="justify-content:space-between; align-items:flex-end;">
-            <div>
-              <h2>ボトルを流す</h2>
-              <div class="hint">※1日3本まで（MVP）</div>
-            </div>
-            <button class="btn btn-ghost" id="backFromWrite" type="button">戻る</button>
-          </div>
+      <div class="write-stack">
+        <div class="write-title">ことばを、ひとつ。</div>
+          
+        <form action="/bottles" method="post" class="write-form">
+          <div class="write-lines">
+            <textarea
+              name="content"
+              class="write-input"
+              rows="6"
+              maxlength="2000"
+              placeholder=""
+              required
+            ></textarea>
+          </div>    
+          
+          <button class="write-submit" type="submit">
+            海に流す。
+          </button>
 
-          <form action="/bottles" method="post" style="margin-top:12px;">
-            <label>ことば</label>
-            <textarea name="content" maxlength="2000" placeholder="今日、海に流したいひとこと。"></textarea>
-            <div class="row" style="margin-top:12px;">
-              <button class="btn" type="submit">流す</button>
-            </div>
-          </form>
-        </div>
+        </form>
       </div>
     </section>
   </div>

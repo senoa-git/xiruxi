@@ -108,34 +108,8 @@ body.is-ready #app{
   margin: 0 auto;
 }
 
-.card{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
-  padding: 18px;
-}
-.card h2{
-  margin:0 0 12px 0;
-  font-size: 16px;
-  letter-spacing:.01em;
-}
-.row{
-  display:flex;
-  gap: 10px;
-  align-items:center;
-  flex-wrap: wrap;
-}
-
-label{
-  display:block;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-input, textarea{
+.card input,
+.card textarea{
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -144,42 +118,11 @@ input, textarea{
   background: rgba(255,255,255,.85);
   outline: none;
 }
-textarea{ resize: vertical; min-height: 130px; }
 
 input:focus, textarea:focus{
   border-color: rgba(37,99,235,.45);
   box-shadow: 0 0 0 4px rgba(37,99,235,.12);
 }
-
-.btn{
-  border: 1px solid rgba(37,99,235,.25);
-  background: linear-gradient(135deg, rgba(56,189,248,.95), rgba(37,99,235,.95));
-  color: white;
-  padding: 10px 14px;
-  border-radius: 14px;
-  font-weight: 650;
-  cursor: pointer;
-  transition: transform .05s ease, filter .15s ease;
-  user-select:none;
-}
-.btn:active{ transform: translateY(1px); }
-.btn:hover{ filter: brightness(1.03); }
-
-.btn-ghost{
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.6);
-  color: var(--text);
-}
-
-.hint{
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.card.center{ max-width: 520px; margin: 0 auto; }
-.card.center.ghost{ background: rgba(255,255,255,.12); }
 
 .walk-text{
   font-size: clamp(28px, 4vw, 44px);
@@ -258,7 +201,7 @@ input:focus, textarea:focus{
 
 /* writeだけスクロールOK */
 #scene-write.is-active{
-  display: block;
+  /* display: block; */
   overflow: auto;
   padding: 42px 18px;
 }
@@ -391,5 +334,100 @@ body.is-letter-open #scene-read .read-stack{
   transform: translateY(-1px);
 }
 .nick-enter:active{
+  transform: translateY(1px);
+}
+
+/* =========================
+   write: 下線6行 + 海に流す
+   ========================= */
+
+#scene-write{
+  padding: 0;
+}
+
+.write-stack{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  text-align: center;
+  padding: 42px 18px;
+}
+
+.write-title{
+  color: rgba(255,255,255,.92);
+  font-weight: 760;
+  letter-spacing: .08em;
+  font-size: clamp(20px, 3vw, 28px);
+  text-shadow:
+    0 2px 0 rgba(0,0,0,.22),
+    0 18px 70px rgba(0,0,0,.38);
+}
+
+/* 下線だけの6行 */
+.write-lines{
+  width: min(720px, 90vw);
+}
+
+.write-input{
+  display:block;
+  width: 100%;
+  resize: none;
+
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+
+  line-height: 2.1;
+  font-size: clamp(18px, 2.4vw, 24px);
+  letter-spacing: .04em;
+  color: rgba(255,255,255,.95);
+
+  /* 6行が確実に出るように高さ固定 */
+  height: calc(2.1em * 6);
+  overflow: hidden;
+
+  /* 下線 */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(2.1em - 1px),
+    rgba(255,255,255,.55) calc(2.1em - 1px),
+    rgba(255,255,255,.55) 2.1em
+  ) !important;
+  background-size: 100% 2.1em;
+  background-repeat: repeat;
+}
+
+/* autofill 念のため */
+.write-input:-webkit-autofill{
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: rgba(255,255,255,.95) !important;
+}
+
+/* 海に流す */
+.write-submit{
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  color: rgba(255,255,255,.94);
+  font-weight: 780;
+  letter-spacing: .08em;
+  font-size: clamp(20px, 3vw, 32px);
+  text-shadow: 0 2px 0 rgba(0,0,0,.22), 0 18px 70px rgba(0,0,0,.38);
+  opacity: .85;
+}
+
+.write-submit:hover{
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.write-submit:active{
   transform: translateY(1px);
 }

@@ -15,6 +15,13 @@
     <source src="{{ url_for('static', path='ocean.mp4') }}" type="video/mp4" />
   </video>
 
+  <audio
+    id="bgAudio"
+    src="{{ url_for('static', path='ocean_bgm.m4a') }}"
+    preload="auto"
+    loop
+  ></audio>
+
   <div id="splash" aria-hidden="true">
     <div class="pixel-title">漂-しるし-</div>
   </div>

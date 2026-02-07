@@ -8,6 +8,7 @@ wheels/
 bottle.db
 app/static/letter.png
 app/static/ocean.mp4
+app/static/ocean_bgm.m4a
 
 # Virtual environments
 .venv

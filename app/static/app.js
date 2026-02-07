@@ -102,6 +102,11 @@
       setTimeout(() => {
         document.body.classList.remove("is-booting");
         document.body.classList.add("is-ready");
+        const audio = document.getElementById("bgAudio");
+        if (audio) {
+          audio.volume = 0.25;
+          audio.play().catch(() => {});
+        }
         show(HAS_ANON ? "scene-choice" : "scene-nick");
       }, SHOW_MS);
 

@@ -55,6 +55,23 @@
     window.removeEventListener("keydown", tryUnlock);
   })();
 
+  (() => {
+    const v = document.getElementById("bgVideo");
+    const a = document.getElementById("bgAudio");
+
+    const unlock = () => {
+      v?.play().catch(() => {});
+      if (a) {
+        a.volume = 0.25;
+        a.play().catch(() => {});
+      }
+    };
+
+    // iOS/アプリ内ブラウザは touchstart が強い
+    window.addEventListener("touchstart", unlock, { once: true, passive: true });
+    window.addEventListener("click", unlock, { once: true, passive: true });
+  })();
+
   function show(id){
     const next = document.getElementById(id);
     if (!next) return;

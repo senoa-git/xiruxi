@@ -17,7 +17,17 @@ body{
   overflow: hidden;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
   color: var(--text);
-  background: #eef6ff;
+  background: url("/static/ocean.png") center/cover no-repeat fixed;
+}
+
+.bg-video{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -3;
+  pointer-events: none;
 }
 
 #app{
@@ -25,18 +35,6 @@ body{
   height: 100vh;
   width: 100vw;
   padding: 0;
-}
-
-/* 背景canvas */
-#bgCanvas{
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -3;
-  pointer-events: none;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
 }
 
 body::after{
@@ -216,7 +214,6 @@ input:focus, textarea:focus{
 
 /* writeだけスクロールOK */
 #scene-write.is-active{
-  /* display: block; */
   overflow: auto;
   padding: 42px 18px;
 }
@@ -239,6 +236,7 @@ input:focus, textarea:focus{
   transition: opacity 1200ms ease;
 }
 .letter-overlay.is-show{ opacity: 1; pointer-events: auto; }
+
 .letter-img{
   width: 100%;
   max-height: 78vh;
@@ -267,9 +265,7 @@ input:focus, textarea:focus{
   text-shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 
-.letter-text .inner{
-  max-width: 100%;
-}
+.letter-text .inner{ max-width: 100%; }
 
 /* 1文字ずつ */
 .letter-text .ch{
@@ -354,17 +350,12 @@ body.is-letter-open #scene-read .read-stack{
   -webkit-appearance: none;
   appearance: none;
 }
-/* Chrome autofill が白い箱を作るのを潰す */
 .nick-input:-webkit-autofill,
 .nick-input:-webkit-autofill:hover,
 .nick-input:-webkit-autofill:focus{
   -webkit-text-fill-color: rgba(255,255,255,.95) !important;
-
-  /* autofill の塗りを「透明」で上書き（これが本命） */
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
           box-shadow: 0 0 0px 1000px transparent inset !important;
-
-  /* 変な遷移で色が戻るのも防ぐ */
   transition: background-color 9999s ease-out 0s;
 }
 
@@ -410,9 +401,7 @@ body.is-letter-open #scene-read .read-stack{
    write: 下線6行 + 海に流す
    ========================= */
 
-#scene-write{
-  padding: 0;
-}
+#scene-write{ padding: 0; }
 
 .write-stack{
   min-height: 100vh;

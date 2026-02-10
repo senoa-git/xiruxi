@@ -9,9 +9,17 @@
 
 <body data-has-anon="{% if has_anon %}1{% else %}0{% endif %}">
 
-  <canvas id="bgCanvas"></canvas>
-
-  <video id="bgVideo" muted loop playsinline preload="auto" style="display:none">
+  <video
+    id="bgVideo"
+    class="bg-video"
+    muted
+    autoplay
+    loop
+    playsinline
+    preload="auto"
+    webkit-playsinline
+    poster="{{ url_for('static', path='ocean.png') }}"
+  >
     <source src="{{ url_for('static', path='ocean.mp4') }}" type="video/mp4" />
   </video>
 
@@ -113,7 +121,6 @@
           <button class="write-submit" type="submit">
             海に流す。
           </button>
-
         </form>
       </div>
     </section>
@@ -127,7 +134,6 @@
     </div>
   </div>
 
-  <!-- ✅ JS 外だし（defer推奨） -->
   <script defer src="{{ url_for('static', path='app.js') }}"></script>
 </body>
 </html>

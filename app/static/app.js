@@ -1,86 +1,59 @@
 (() => {
   const HAS_ANON = document.body.dataset.hasAnon === "1";
+  const SCENE_FADE_MS = 1200;
 
-  // ===== Pixelated video background (Canvas) =====
+  // ===== Audio & Video unlock (first user gesture) =====
   (() => {
     const video = document.getElementById("bgVideo");
-    const canvas = document.getElementById("bgCanvas");
-    const ctx = canvas.getContext("2d", { alpha: false });
+    const audio = document.getElementById("bgAudio");
 
-    const PIXEL = 2;
-    const PLAYBACK = 0.7;
-    const SAT = 1;
-    const CON = 1;
+    let unlocked = false;
 
-    const off = document.createElement("canvas");
-    const offCtx = off.getContext("2d", { alpha: false });
+    async function tryUnlock() {
+      if (unlocked) return;
 
-    function resize() {
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const cssW = window.innerWidth;
-      const cssH = window.innerHeight;
-
-      canvas.width = Math.floor(cssW * dpr);
-      canvas.height = Math.floor(cssH * dpr);
-      canvas.style.width = cssW + "px";
-      canvas.style.height = cssH + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      off.width = Math.max(1, Math.floor(cssW / PIXEL));
-      off.height = Math.max(1, Math.floor(cssH / PIXEL));
-      offCtx.imageSmoothingEnabled = false;
-      ctx.imageSmoothingEnabled = false;
-    }
-
-    function draw() {
-      if (video.readyState >= 2 && video.videoWidth && video.videoHeight) {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-
-        const targetW = off.width;
-        const targetH = off.height;
-
-        const videoAspect = vw / vh;
-        const targetAspect = targetW / targetH;
-
-        let sx = 0, sy = 0, sw = vw, sh = vh;
-
-        if (videoAspect > targetAspect) {
-          sh = vh;
-          sw = Math.round(vh * targetAspect);
-          sx = Math.round((vw - sw) / 2);
-          sy = 0;
-        } else {
-          sw = vw;
-          sh = Math.round(vw / targetAspect);
-          sx = 0;
-          sy = Math.round((vh - sh) / 2);
-        }
-
-        offCtx.drawImage(video, sx, sy, sw, sh, 0, 0, targetW, targetH);
-
-        ctx.filter = `saturate(${SAT}) contrast(${CON})`;
-        ctx.drawImage(off, 0, 0, targetW, targetH, 0, 0, window.innerWidth, window.innerHeight);
-        ctx.filter = "none";
+      if (video) {
+        try {
+          video.playbackRate = 0.7;
+          await video.play();
+        } catch (_) {}
       }
-      requestAnimationFrame(draw);
+
+      if (audio) {
+        try {
+          audio.loop = true;
+          audio.preload = "auto";
+          audio.volume = 0.25;
+
+          if (audio.readyState < 3) {
+            await new Promise((resolve) => {
+              audio.addEventListener("canplay", resolve, { once: true });
+            })
+          }
+          
+          await audio.play();
+          unlocked = true;
+          
+          window.removeEventListener("pointerdown", tryUnlock);
+          window.removeEventListener("touchstart", tryUnlock);
+          window.removeEventListener("keydown", tryUnlock);
+
+          document.body.classList.add("audio-started");
+        } catch (e) {
+          document.body.classList.add("audio-blocked");
+        }
+      } else {
+        unlocked = true;
+        window.removeEventListener("pointerdown", tryUnlock);
+        window.removeEventListener("touchstart", tryUnlock);
+        window.removeEventListener("keydown", tryUnlock);
+      }
     }
 
-    resize();
-    window.addEventListener("resize", resize, { passive: true });
-
-    video.playbackRate = PLAYBACK;
-    video.addEventListener("canplay", () => {
-      video.playbackRate = PLAYBACK;
-      video.play().catch(() => {});
-    });
-
-    const p = video.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-    requestAnimationFrame(draw);
+    window.removeEventListener("pointerdown", tryUnlock, { passive: true });
+    window.removeEventListener("touchstart", tryUnlock, { passive: true });
+    window.removeEventListener("keydown", tryUnlock);
   })();
-
-  const SCENE_FADE_MS = 1200;
 
   function show(id){
     const next = document.getElementById(id);
@@ -88,10 +61,8 @@
 
     const current = document.querySelector(".scene.is-active");
 
-    // 先に次を出す（クロスフェード）
     next.classList.add("is-active");
 
-    // 旧シーンは leaving にしてフェードアウト
     if (current && current !== next) {
       current.classList.add("is-leaving");
       current.classList.remove("is-active");
@@ -101,7 +72,6 @@
       }, SCENE_FADE_MS);
     }
 
-    // 保険：どのシーンでもトップへ
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -118,6 +88,7 @@
       setTimeout(() => {
         document.body.classList.remove("is-booting");
         document.body.classList.add("is-ready");
+
         const audio = document.getElementById("bgAudio");
         if (audio) {
           audio.volume = 0.25;
@@ -170,7 +141,7 @@
 
         // 演出：砂浜 → choice
         show("scene-walk");
-        window.setTimeout(() => show("scene-choice"), 900);
+        window.setTimeout(() => show("scene-choice"), 2400);
       } catch (_) {}
     });
   })();
@@ -284,7 +255,6 @@
             return;
           }
 
-          // スペースも「間」として出したいならカウント増やす
           const span = document.createElement("span");
           span.className = "ch";
           span.textContent = ch;
@@ -293,7 +263,6 @@
           span.style.animationDelay = `${d}s`;
           inner.appendChild(span);
 
-          // 空白もタイピング感として遅らせたいなら：if (ch === " ") k += 0.5; みたいにしても良い
           k += 1;
         });
 
@@ -302,6 +271,7 @@
         textEl.textContent = "波の音に、ことばが消えた。";
       }
     }
+
     function closeLetter(){
       document.body.classList.remove("is-letter-open");
       letterOverlay?.classList.remove("is-show");
@@ -314,6 +284,8 @@
       if (e.key === "Escape") closeLetter();
     });
   })();
+
+  // ===== Write: remaining counter =====
   (() => {
     const input = document.querySelector(".write-input");
     const count = document.getElementById("writeCount");
@@ -322,7 +294,7 @@
     const MAX = 90;
 
     const update = () => {
-      const len = [...input.value].length; // 絵文字対応
+      const len = [...input.value].length;
       count.textContent = MAX - len;
     };
 
